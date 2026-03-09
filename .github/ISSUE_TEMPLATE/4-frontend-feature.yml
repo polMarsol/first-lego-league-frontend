@@ -1,0 +1,127 @@
+name: Frontend feature (fast standard)
+description: Create a frontend feature issue with a fast but implementation-ready structure.
+title: "[Feat][Frontend]: "
+labels: ["inbox", "frontend"]
+projects: ["UdL-EPS-SoftArch-Igualada/4"]
+type: feature
+body:
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature description
+      description: Describe the desired frontend behavior and context.
+      placeholder: Explain what needs to be built.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal-user-value
+    attributes:
+      label: Goal / user value
+      description: What user or product value does this deliver?
+      placeholder: As a ..., I want ..., so that ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: Preconditions
+      description: Existing technical or product conditions needed before implementation.
+      placeholder: Optional. List assumptions, dependencies, or setup prerequisites.
+    validations:
+      required: false
+
+  - type: textarea
+    id: postconditions
+    attributes:
+      label: Postconditions
+      description: Observable state after implementation is complete.
+      placeholder: What should be true once this issue is done?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope checklist
+      description: Confirm both scope boundaries are explicitly documented.
+      options:
+        - label: In-scope items are clearly listed in this issue.
+          required: true
+        - label: Out-of-scope items are clearly listed in this issue.
+          required: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: ui-routes-components
+    attributes:
+      label: UI routes/components affected
+      description: Routes, pages, components, or modules impacted by this change.
+      placeholder: Optional. Example: /teams, Navbar, TeamListCard
+    validations:
+      required: false
+
+  - type: textarea
+    id: files-to-change
+    attributes:
+      label: Files to create/modify
+      description: Relevant files expected to be added or updated.
+      placeholder: Optional. Example: src/app/teams/page.tsx
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Clear criteria to verify feature correctness.
+      placeholder: Write testable, observable criteria.
+    validations:
+      required: true
+
+  - type: textarea
+    id: mini-demo
+    attributes:
+      label: Mini demo / manual validation
+      description: Short reproducible demo flow for reviewers.
+      placeholder: Step-by-step manual validation and expected result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing-notes
+    attributes:
+      label: Testing notes
+      description: Automated test strategy, edge cases, or known gaps.
+      placeholder: Optional. Include what should be tested and how.
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies-blockers
+    attributes:
+      label: Dependencies / blockers
+      description: Linked issues, blockers, or cross-team dependencies.
+      placeholder: Optional. Add issue references or blockers.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story points
+      description: Effort estimate including implementation and tests.
+      options:
+        - Select an option
+        - 0.25 story points
+        - 0.5 story points
+        - 1 story point
+        - 2 story points
+        - 3 story points
+        - 4 story points
+        - 5 story points
+        - 8 story points
+    validations:
+      required: true

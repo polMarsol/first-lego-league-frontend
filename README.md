@@ -1,5 +1,64 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Issue Templates
+
+This repository uses GitHub Issue Forms for structured backlog management.
+
+### Available templates
+
+- `New feature`: generic feature template.
+- `Frontend feature (fast standard)`: frontend-focused template for fast, implementation-ready issues.
+- `Bug`: bug report template.
+- `Refactor`: refactor request template.
+
+### Frontend feature (fast standard)
+
+Use this template when creating frontend work items (pages, components, navigation, UX states, frontend validations, etc.).
+
+Default metadata:
+
+- Title prefix: `[Feat][Frontend]: `
+- Labels: `inbox`, `frontend`
+- Project: `UdL-EPS-SoftArch-Igualada/4`
+
+Required fields:
+
+- Feature description
+- Goal / user value
+- Postconditions
+- Scope checklist (in-scope and out-of-scope explicitly confirmed)
+- Acceptance criteria
+- Mini demo / manual validation
+- Story points
+
+Optional fields:
+
+- Preconditions
+- UI routes/components affected
+- Files to create/modify
+- Testing notes
+- Dependencies / blockers
+
+Story points available:
+
+- `0.25`, `0.5`, `1`, `2`, `3`, `4`, `5`, `8`
+
+### How to create a frontend issue quickly
+
+1. Go to **Issues** > **New issue**.
+2. Select **Frontend feature (fast standard)**.
+3. Fill the required fields first.
+4. Add optional implementation hints (routes/files/tests) only if they help execution.
+5. Submit the issue and move it through your normal project workflow.
+
+### Practical writing guideline
+
+Keep required fields concise and testable:
+
+- Use observable acceptance criteria.
+- Include a mini demo with reproducible steps and expected behavior.
+- State scope boundaries to avoid hidden work.
+
 ## Getting Started
 
 Install dependencies (only needed the first time, or when dependencies change):
