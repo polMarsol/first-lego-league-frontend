@@ -9,7 +9,7 @@ import { parseErrorMessage, NotFoundError } from "@/types/errors";
 import Link from "next/link";
 
 interface RecordPageProps {
-    params: Promise<{ id: string }>;
+    readonly params: Promise<{ id: string }>;
 }
 
 export default async function RecordPage(props: Readonly<RecordPageProps>) {

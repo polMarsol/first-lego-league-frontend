@@ -2,11 +2,11 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 type AuthPageShellProps = {
-  eyebrow: string;
-  title: string;
-  description?: string;
-  children: ReactNode;
-  className?: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+  readonly className?: string;
 };
 
 export default function AuthPageShell({

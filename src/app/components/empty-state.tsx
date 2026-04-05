@@ -2,10 +2,10 @@ import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
-  title: string;
-  description?: string;
-  className?: string;
-  action?: React.ReactNode;
+  readonly title: string;
+  readonly description?: string;
+  readonly className?: string;
+  readonly action?: React.ReactNode;
 }
 
 /**

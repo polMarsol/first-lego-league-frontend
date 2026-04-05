@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 type PageShellProps = {
-  eyebrow: string;
-  title: string;
-  description?: string;
-  children: ReactNode;
-  heroAside?: ReactNode;
-  className?: string;
-  bannerClassName?: string;
-  panelClassName?: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly children: ReactNode;
+  readonly heroAside?: ReactNode;
+  readonly className?: string;
+  readonly bannerClassName?: string;
+  readonly panelClassName?: string;
 };
 
 export default function PageShell({

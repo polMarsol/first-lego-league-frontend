@@ -11,7 +11,7 @@ import Link from "next/link";
 import { User } from "@/types/user";
 
 interface UsersPageProps {
-    params: Promise<{ id: string }>;
+    readonly params: Promise<{ id: string }>;
 }
 
 function getRecordHref(recordUri: string) {

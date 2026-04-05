@@ -9,7 +9,7 @@ import { parseErrorMessage, NotFoundError } from "@/types/errors";
 import Link from "next/link";
 
 interface EditionDetailPageProps {
-    params: Promise<{ id: string }>;
+    readonly params: Promise<{ id: string }>;
 }
 
 function getTeamHref(team: Team): string | null {
