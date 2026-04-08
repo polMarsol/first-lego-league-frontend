@@ -25,7 +25,11 @@ export class UsersService {
     }
 
     async createUser(user: User): Promise<User> {
-        return createHalResource<User>('/users', user, this.authStrategy, 'user');
+        return createHalResource<User>('/users', {
+            id: user.username,
+            email: user.email,
+            password: user.password,
+        }, this.authStrategy, 'user');
     }
 
     async patchUser(id: string, data: Partial<Pick<User, 'email' | 'password'>>): Promise<User> {
