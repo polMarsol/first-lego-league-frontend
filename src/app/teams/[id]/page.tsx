@@ -14,8 +14,11 @@ function getTeamTitle(team: Team | null, id: string) {
     if (team?.name) {
         return team.name;
     }
+    if (team?.id) {
+        return team.id;
+    }
 
-    return `Team ${id}`;
+    return `Team ${decodeURIComponent(id)}`;
 }
 
 export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps>) {

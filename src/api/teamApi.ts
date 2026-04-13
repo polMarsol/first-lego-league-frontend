@@ -11,17 +11,17 @@ export class TeamsService {
     }
 
     async getTeamById(id: string): Promise<Team> {
-        const teamId = encodeURIComponent(id);
+        const teamId = encodeURIComponent(decodeURIComponent(id));
         return fetchHalResource<Team>(`/teams/${teamId}`, this.authStrategy);
     }
 
     async getTeamCoach(id: string): Promise<User[]> {
-        const teamId = encodeURIComponent(id);
+        const teamId = encodeURIComponent(decodeURIComponent(id));
         return fetchHalCollection<User>(`/teams/${teamId}/trainedBy`, this.authStrategy, 'coaches').catch(() => []);
     }
 
     async getTeamMembers(id: string): Promise<User[]> {
-        const teamId = encodeURIComponent(id);
-        return fetchHalCollection<User>(`/teams/${teamId}/members`, this.authStrategy, 'members').catch(() => []);
+        const teamId = encodeURIComponent(decodeURIComponent(id));
+        return fetchHalCollection<User>(`/teams/${teamId}/members`, this.authStrategy, 'teamMembers').catch(() => []);
     }
 }
