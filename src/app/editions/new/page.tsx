@@ -1,25 +1,37 @@
 import { UsersService } from "@/api/userApi";
+import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { isAdmin } from "@/lib/authz";
+import { AuthenticationError, parseErrorMessage } from "@/types/errors";
 import { User } from "@/types/user";
 import { redirect } from "next/navigation";
 import NewEditionForm from "./form";
 
 export const dynamic = "force-dynamic";
 
-function isAdmin(user: User | null) {
-    return !!user?.authorities?.some(
-        (authority) => authority.authority === "ROLE_ADMIN"
-    );
-}
-
 export default async function NewEditionPage() {
     const auth = await serverAuthProvider.getAuth();
     if (!auth) redirect("/login");
 
-    const currentUser = await new UsersService(serverAuthProvider).getCurrentUser().catch(() => null);
+    let currentUser: User | null = null;
+    let error: string | null = null;
 
-    if (!isAdmin(currentUser)) {
+    try {
+        currentUser = await new UsersService(serverAuthProvider).getCurrentUser();
+    } catch (e) {
+        if (e instanceof AuthenticationError) {
+            redirect("/login");
+        }
+
+        error = parseErrorMessage(e);
+    }
+
+    if (!error && !currentUser) {
+        redirect("/login");
+    }
+
+    if (!error && !isAdmin(currentUser)) {
         redirect("/");
     }
 
@@ -29,7 +41,7 @@ export default async function NewEditionPage() {
             title="New Edition"
             description="Create a new FIRST LEGO League edition and publish its basic season details."
         >
-            <NewEditionForm />
+            {error ? <ErrorAlert message={error} /> : <NewEditionForm />}
         </PageShell>
     );
 }

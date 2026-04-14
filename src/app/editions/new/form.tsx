@@ -14,7 +14,6 @@ type FormValues = {
     year: number;
     venueName: string;
     description: string;
-    state: string;
 };
 
 export default function NewEditionForm() {
@@ -29,7 +28,6 @@ export default function NewEditionForm() {
             year: new Date().getUTCFullYear(),
             venueName: "",
             description: "",
-            state: "DRAFT",
         },
     });
 
@@ -51,7 +49,11 @@ export default function NewEditionForm() {
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="mx-auto grid max-w-xl gap-5">
             {submitError && (
-                <p className="border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                <p
+                    className="border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive"
+                    role="alert"
+                    aria-live="assertive"
+                >
                     {submitError}
                 </p>
             )}
@@ -70,7 +72,9 @@ export default function NewEditionForm() {
                     })}
                 />
                 {errors.year && (
-                    <p className="text-sm text-destructive">{errors.year.message}</p>
+                    <p className="text-sm text-destructive" role="alert">
+                        {errors.year.message}
+                    </p>
                 )}
             </div>
 
@@ -85,7 +89,9 @@ export default function NewEditionForm() {
                     })}
                 />
                 {errors.venueName && (
-                    <p className="text-sm text-destructive">{errors.venueName.message}</p>
+                    <p className="text-sm text-destructive" role="alert">
+                        {errors.venueName.message}
+                    </p>
                 )}
             </div>
 
@@ -100,7 +106,9 @@ export default function NewEditionForm() {
                     })}
                 />
                 {errors.description && (
-                    <p className="text-sm text-destructive">{errors.description.message}</p>
+                    <p className="text-sm text-destructive" role="alert">
+                        {errors.description.message}
+                    </p>
                 )}
             </div>
 
@@ -108,9 +116,9 @@ export default function NewEditionForm() {
                 <Label htmlFor="state">Initial state</Label>
                 <Input
                     id="state"
+                    value="DRAFT"
                     readOnly
                     aria-readonly="true"
-                    {...register("state")}
                 />
                 <p className="text-sm text-muted-foreground">
                     New editions are created in DRAFT state by the backend.

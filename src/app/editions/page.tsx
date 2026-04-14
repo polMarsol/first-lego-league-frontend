@@ -3,6 +3,7 @@ import PageShell from "@/app/components/page-shell";
 import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { Edition } from "@/types/edition";
 import { parseErrorMessage } from "@/types/errors";
@@ -50,12 +51,6 @@ function EditionCard({ edition }: Readonly<{ edition: Edition }>) {
         <Link className="list-card block h-full pl-7 hover:text-primary" href={href}>
             {content}
         </Link>
-    );
-}
-
-function isAdmin(user: User | null) {
-    return !!user?.authorities?.some(
-        (authority) => authority.authority === "ROLE_ADMIN"
     );
 }
 
