@@ -1,8 +1,10 @@
+import { EditionsService } from "@/api/editionApi";
 import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import PageShell from "@/app/components/page-shell";
 import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getEncodedResourceId } from "@/lib/halRoute";
 import { ScientificProject } from "@/types/scientificProject";
 import Link from "next/link";
 import { buttonVariants } from "@/app/components/button";
@@ -29,16 +31,28 @@ function ScientificProjectCard({ project, index }: Readonly<{ project: Scientifi
     );
 }
 
-export default async function ScientificProjectsPage() {
+export default async function ScientificProjectsPage({ searchParams }: Readonly<{ searchParams: Promise<Record<string, string>> }>) {
     let projects: ScientificProject[] = [];
     let error: string | null = null;
     const auth = await serverAuthProvider.getAuth();
     const isLoggedIn = !!auth;
 
-
     try {
+        const params = await searchParams;
+        const year = params.year;
         const service = new ScientificProjectsService(serverAuthProvider);
-        projects = await service.getScientificProjects();
+
+        if (year) {
+            const editionsService = new EditionsService(serverAuthProvider);
+            const edition = await editionsService.getEditionByYear(year);
+
+            const editionId = edition?.uri ? getEncodedResourceId(edition.uri) : null;
+            if (editionId) {
+                projects = await service.getScientificProjectsByEdition(editionId);
+            }
+        } else {
+            projects = await service.getScientificProjects();
+        }
     } catch (e) {
         console.error("Failed to fetch scientific projects:", e);
         error = parseErrorMessage(e);

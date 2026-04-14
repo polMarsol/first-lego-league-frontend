@@ -1,12 +1,16 @@
 "use client";
 
+import { Suspense } from "react";
 import { useAuth } from "@/app/components/authentication";
+import EditionSelector from "@/app/components/edition-selector";
 import Loginbar from "@/app/components/loginbar";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function Navbar() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const currentYear = searchParams.get("year");
     const { user } = useAuth();
 
     const navLinks = [
@@ -16,6 +20,12 @@ export default function Navbar() {
         { href: "/editions", label: "Editions" },
         { href: "/scientific-projects", label: "Scientific Projects" }
     ];
+
+    const showEditionSelector = [
+        "/teams",
+        "/editions",
+        "/scientific-projects"
+    ].some((path) => pathname.startsWith(path));
 
     return (
         <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
@@ -41,10 +51,15 @@ export default function Navbar() {
                             const active = href === "/"
                                 ? pathname === "/"
                                 : pathname === href || pathname.startsWith(`${href}/`);
+                            const hrefWithYear = href === "/"
+                                ? href
+                                : currentYear
+                                    ? `${href}?year=${encodeURIComponent(currentYear)}`
+                                    : href;
                             return (
                                 <Link
                                     key={href}
-                                    href={href}
+                                    href={hrefWithYear}
                                     className={
                                         active
                                             ? "border-b-2 border-accent px-4 py-2 text-sm font-medium text-accent"
@@ -57,7 +72,12 @@ export default function Navbar() {
                         })}
                 </div>
 
-                <div className="order-2 lg:order-3">
+                <div className="order-2 flex items-center gap-3 lg:order-3">
+                    {showEditionSelector && (
+                        <Suspense fallback={null}>
+                            <EditionSelector />
+                        </Suspense>
+                    )}
                     <Loginbar />
                 </div>
             </div>

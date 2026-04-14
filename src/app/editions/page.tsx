@@ -48,13 +48,21 @@ function EditionCard({ edition }: Readonly<{ edition: Edition }>) {
     );
 }
 
-export default async function EditionsPage() {
+export default async function EditionsPage({ searchParams }: Readonly<{ searchParams: Promise<Record<string, string>> }>) {
     let editions: Edition[] = [];
     let error: string | null = null;
 
     try {
+        const params = await searchParams;
+        const year = params.year;
         const service = new EditionsService(serverAuthProvider);
-        editions = await service.getEditions();
+
+        if (year) {
+            const edition = await service.getEditionByYear(year);
+            editions = edition ? [edition] : [];
+        } else {
+            editions = await service.getEditions();
+        }
     } catch (e) {
         console.error("Failed to fetch editions:", e);
         error = parseErrorMessage(e);

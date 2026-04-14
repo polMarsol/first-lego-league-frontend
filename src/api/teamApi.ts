@@ -8,4 +8,8 @@ export class TeamsService {
     async getTeams(): Promise<Team[]> {
         return fetchHalCollection<Team>('/teams', this.authStrategy, 'teams');
     }
+
+    async getTeamsByEdition(editionUri: string): Promise<Team[]> {
+        return fetchHalCollection<Team>(editionUri, this.authStrategy, 'teams');
+    }
 }

@@ -1,3 +1,4 @@
+import { EditionsService } from "@/api/editionApi";
 import { TeamsService } from "@/api/teamApi";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
@@ -58,13 +59,25 @@ function TeamCard({ team }: Readonly<{ team: Team }>) {
     );
 }
 
-export default async function TeamsPage() {
+export default async function TeamsPage({ searchParams }: Readonly<{ searchParams: Promise<Record<string, string>> }>) {
     let teams: Team[] = [];
     let error: string | null = null;
 
     try {
+        const params = await searchParams;
+        const year = params.year;
         const service = new TeamsService(serverAuthProvider);
-        teams = await service.getTeams();
+
+        if (year) {
+            const editionsService = new EditionsService(serverAuthProvider);
+            const edition = await editionsService.getEditionByYear(year);
+
+            if (edition && edition.uri) {
+                teams = await service.getTeamsByEdition(edition.uri + "/teams");
+            }
+        } else {
+            teams = await service.getTeams();
+        }
     } catch (e) {
         console.error("Failed to fetch teams:", e);
         error = getTeamErrorMessage(e);
