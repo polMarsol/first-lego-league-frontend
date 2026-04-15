@@ -67,7 +67,8 @@ export function useTeamMembers(teamId: string, initialMembers: User[] = []) {
                 await service.removeTeamMember(memberUri);
                 setMembers(prev =>
                     prev.filter(m => {
-                        const href = m._links?.self?.href || (m as any).uri;
+                        const memberData = m as any;
+                        const href = memberData._links?.self?.href || memberData.uri;
                         return href !== memberUri;
                     })
                 );
