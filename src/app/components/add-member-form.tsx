@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/app/components/button';
-import { AVAILABLE_MEMBER_ROLES } from '@/types/team';
+import { AVAILABLE_MEMBER_ROLES, MemberRole } from '@/types/team';
 
 type AddMemberFormProps = Readonly<{
     onSubmit: (name: string, role: string) => Promise<boolean> | void;
@@ -17,7 +17,7 @@ export function AddMemberForm({
 }: AddMemberFormProps) {
 
     const [name, setName] = useState('');
-    const [role, setRole] = useState(AVAILABLE_MEMBER_ROLES[0]);
+    const [role, setRole] = useState<string>(AVAILABLE_MEMBER_ROLES[0]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +26,6 @@ export function AddMemberForm({
 
         const success = await onSubmit(name.trim(), role);
 
-        // limpiar solo si ha ido bien
         if (success) {
             setName('');
             setRole(AVAILABLE_MEMBER_ROLES[0]);
@@ -36,32 +35,40 @@ export function AddMemberForm({
     const isDisabled = isLoading || !name.trim() || !role;
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-3 border p-4 rounded">
-            <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Name"
-                className="border p-2 w-full"
-            />
+        <form onSubmit={handleSubmit} className="space-y-3 border p-4 rounded bg-white dark:bg-zinc-900 shadow-sm">
+            <div>
+                <label className="block text-xs font-medium uppercase text-zinc-500 mb-1">Name</label>
+                <input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Albert"
+                    className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isLoading}
+                />
+            </div>
 
-            <select
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                className="border p-2 w-full"
-            >
-                {AVAILABLE_MEMBER_ROLES.map(r => (
-                    <option key={r} value={r}>
-                        {r}
-                    </option>
-                ))}
-            </select>
+            <div>
+                <label className="block text-xs font-medium uppercase text-zinc-500 mb-1">Role</label>
+                <select
+                    value={role}
+                    onChange={e => setRole(e.target.value)}
+                    className="border p-2 w-full rounded bg-white dark:bg-zinc-800"
+                    disabled={isLoading}
+                >
+                    {AVAILABLE_MEMBER_ROLES.map(r => (
+                        <option key={r} value={r}>
+                            {r}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={isDisabled}>
-                    {isLoading ? 'Adding...' : 'Add'}
+                    {isLoading ? 'Adding...' : 'Add Member'}
                 </Button>
 
-                <Button type="button" onClick={onCancel} disabled={isLoading}>
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
                     Cancel
                 </Button>
             </div>

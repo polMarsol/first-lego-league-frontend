@@ -1,4 +1,5 @@
 import { TeamsService } from "@/api/teamApi";
+import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -15,12 +16,10 @@ function extractTeamMembers(data: any): any[] {
     const rawMembers = Array.isArray(data) ? data : (data?._embedded?.teamMembers ?? []);
     
     return rawMembers.map((m: any) => {
-        // Extraemos solo strings planos. CERO objetos complejos.
         return {
-            id: String(m.id ?? m.uri?.split('/').pop() ?? Math.random()),
+            id: String(m.id ?? m.uri?.split('/').pop() ?? Math.random().toString()),
             name: String(m.name ?? m.username ?? "Unnamed member"),
             role: String(m.role ?? "Member"),
-            // Guardamos la URL de borrado como un string simple
             uri: String(m._links?.self?.href || m.uri || "")
         };
     });
@@ -28,8 +27,11 @@ function extractTeamMembers(data: any): any[] {
 
 export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps>) {
     const { id } = await props.params;
+    
     const service = new TeamsService(serverAuthProvider);
+    const userService = new UsersService(serverAuthProvider);
 
+    let currentUser: User | null = null;
     let team: Team | null = null;
     let coaches: User[] = [];
     let members: any[] = [];
@@ -37,9 +39,14 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     let membersError: string | null = null;
 
     try {
+        // Intentamos obtener el usuario, pero no redirigimos si falla
+        currentUser = await userService.getCurrentUser().catch(() => null);
         team = await service.getTeamById(id);
     } catch (e) {
-        error = e instanceof NotFoundError ? "Team not found" : parseErrorMessage(e);
+        if (e instanceof NotFoundError) {
+            return <EmptyState title="Not found" description="Team does not exist" />;
+        }
+        error = parseErrorMessage(e);
     }
 
     if (team && !error) {
@@ -59,6 +66,15 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     if (error) return <ErrorAlert message={error} />;
     if (!team) return <EmptyState title="Not found" description="Team does not exist" />;
 
+    // Solo calculamos permisos si hay un usuario logueado
+    const isAdmin = !!currentUser?.authorities?.some(
+        (authority) => authority.authority === "ROLE_ADMIN"
+    );
+
+    const isCoach = !!currentUser && coaches.some(
+        (c) => c.username === currentUser?.username || c.email === currentUser?.email
+    );
+
     const coachName = coaches.length > 0 
         ? (coaches[0].name ?? coaches[0].username ?? coaches[0].email ?? "Unnamed coach") 
         : "No coach assigned";
@@ -69,7 +85,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                 <div className="w-full rounded-lg border bg-white p-6 shadow-sm dark:bg-black">
                     <h1 className="mb-2 text-2xl font-semibold">{team.name}</h1>
 
-                    <div className="mb-6 space-y-1 text-sm text-zinc-600">
+                    <div className="mb-6 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                         {team.city && <p><strong>City:</strong> {team.city}</p>}
                         <p><strong>Coach:</strong> {coachName}</p>
                     </div>
@@ -78,12 +94,11 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
                     {!membersError && (
                         <TeamMembersManager
-                            // La key asegura que si cambian los miembros, el componente se refresca
                             key={`${id}-${members.length}`}
                             teamId={id}
                             initialMembers={members}
-                            isCoach={true} 
-                            isAdmin={true}
+                            isCoach={isCoach} 
+                            isAdmin={isAdmin}
                         />
                     )}
                     {membersError && <p className="text-red-500 text-sm">{membersError}</p>}
