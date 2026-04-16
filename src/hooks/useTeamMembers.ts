@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { TeamsService } from '@/api/teamApi';
 import { clientAuthProvider } from '@/lib/authProvider';
@@ -26,21 +25,17 @@ export function useTeamMembers(teamId: string, initialMembers: User[] = []) {
                 setError('Missing teamId');
                 return false;
             }
-
             setIsLoading(true);
             setError(null);
-
             try {
                 if (members.length >= MAX_TEAM_MEMBERS) {
                     setError('Team has reached maximum members');
                     return false;
                 }
-
                 const newMember = await service.addTeamMember(teamId, {
                     name,
                     role,
                 });
-
                 setMembers(prev => [...prev, newMember as unknown as User]);
                 return true;
             } catch {
@@ -54,31 +49,17 @@ export function useTeamMembers(teamId: string, initialMembers: User[] = []) {
     );
 
     const removeMember = useCallback(
-        async (memberUri: string) => {
-            if (!memberUri) {
-                setError('Missing member URI');
-                return;
-            }
-
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                await service.removeTeamMember(memberUri);
-                setMembers(prev =>
-                    prev.filter(m => {
-                        const memberData = m as { _links?: { self: { href: string } }, uri?: string };
-                        const href = memberData._links?.self?.href || memberData.uri;
-                        return href !== memberUri;
-                    })
-                );
-            } catch {
-                setError('Failed to remove member');
-            } finally {
-                setIsLoading(false);
-            }
+        (memberUri: string) => {
+            if (!memberUri) return;
+            setMembers(prev =>
+                prev.filter(m => {
+                    const memberData = m as { _links?: { self: { href: string } }, uri?: string };
+                    const href = memberData._links?.self?.href || memberData.uri;
+                    return href !== memberUri;
+                })
+            );
         },
-        [service]
+        []
     );
 
     return {
