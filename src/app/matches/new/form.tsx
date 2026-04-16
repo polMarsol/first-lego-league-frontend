@@ -39,7 +39,7 @@ function EmptySelectMessage({
 
     return (
         <p className="text-sm text-muted-foreground">
-            No {label.toLowerCase()} are available yet. Ask an administrator to create them in the backend first.
+            No {label.toLowerCase()} are available yet. Create them in the backend first.
         </p>
     );
 }
@@ -161,6 +161,8 @@ export default function NewMatchForm({
                 <select
                     id="round"
                     className={selectClassName}
+                    aria-invalid={errors.round ? "true" : "false"}
+                    aria-describedby={errors.round ? "round-error" : undefined}
                     disabled={roundOptions.length === 0}
                     {...register("round", { required: "Round is required" })}
                 >
@@ -175,7 +177,7 @@ export default function NewMatchForm({
                 </select>
                 <EmptySelectMessage label="rounds" hasOptions={roundOptions.length > 0} />
                 {errors.round && (
-                    <p className="text-sm text-destructive" role="alert">
+                    <p id="round-error" className="text-sm text-destructive" role="alert">
                         {errors.round.message}
                     </p>
                 )}
@@ -186,6 +188,8 @@ export default function NewMatchForm({
                 <select
                     id="competitionTable"
                     className={selectClassName}
+                    aria-invalid={errors.competitionTable ? "true" : "false"}
+                    aria-describedby={errors.competitionTable ? "competition-table-error" : undefined}
                     disabled={competitionTableOptions.length === 0}
                     {...register("competitionTable", { required: "Competition table is required" })}
                 >
@@ -205,7 +209,7 @@ export default function NewMatchForm({
                     hasOptions={competitionTableOptions.length > 0}
                 />
                 {errors.competitionTable && (
-                    <p className="text-sm text-destructive" role="alert">
+                    <p id="competition-table-error" className="text-sm text-destructive" role="alert">
                         {errors.competitionTable.message}
                     </p>
                 )}
@@ -217,6 +221,8 @@ export default function NewMatchForm({
                     <select
                         id="teamA"
                         className={selectClassName}
+                        aria-invalid={errors.teamA ? "true" : "false"}
+                        aria-describedby={errors.teamA ? "team-a-error" : undefined}
                         disabled={teamOptions.length < 2}
                         {...register("teamA", { required: "Team A is required" })}
                     >
@@ -230,7 +236,7 @@ export default function NewMatchForm({
                         ))}
                     </select>
                     {errors.teamA && (
-                        <p className="text-sm text-destructive" role="alert">
+                        <p id="team-a-error" className="text-sm text-destructive" role="alert">
                             {errors.teamA.message}
                         </p>
                     )}
@@ -241,6 +247,8 @@ export default function NewMatchForm({
                     <select
                         id="teamB"
                         className={selectClassName}
+                        aria-invalid={errors.teamB ? "true" : "false"}
+                        aria-describedby={errors.teamB ? "team-b-error" : undefined}
                         disabled={teamOptions.length < 2}
                         {...register("teamB", {
                             required: "Team B is required",
@@ -258,7 +266,7 @@ export default function NewMatchForm({
                         ))}
                     </select>
                     {errors.teamB && (
-                        <p className="text-sm text-destructive" role="alert">
+                        <p id="team-b-error" className="text-sm text-destructive" role="alert">
                             {errors.teamB.message}
                         </p>
                     )}
@@ -270,6 +278,8 @@ export default function NewMatchForm({
                 <select
                     id="referee"
                     className={selectClassName}
+                    aria-invalid={errors.referee ? "true" : "false"}
+                    aria-describedby={errors.referee ? "referee-error" : undefined}
                     disabled={refereeOptions.length === 0}
                     {...register("referee", { required: "Referee is required" })}
                 >
@@ -284,7 +294,7 @@ export default function NewMatchForm({
                 </select>
                 <EmptySelectMessage label="referees" hasOptions={refereeOptions.length > 0} />
                 {errors.referee && (
-                    <p className="text-sm text-destructive" role="alert">
+                    <p id="referee-error" className="text-sm text-destructive" role="alert">
                         {errors.referee.message}
                     </p>
                 )}

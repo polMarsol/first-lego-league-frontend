@@ -23,65 +23,69 @@ export const dynamic = "force-dynamic";
 
 function getUriLabel(resourceUri?: string, fallbackPrefix: string = "Item") {
     const uri = resourceUri ?? "";
-    let decodedId = uri.split("/").filter(Boolean).at(-1) ?? "";
+    let decodedId = uri.split("/").findLast(Boolean) ?? "";
 
     try {
         decodedId = decodeURIComponent(decodedId);
     } catch {
-        // keep the raw segment if decoding fails
     }
 
     return decodedId ? `${fallbackPrefix} ${decodedId}` : fallbackPrefix;
 }
 
 function getRoundOption(round: Round): Option | null {
-    const value = round.link("self")?.href ?? round.uri;
+    const resourceUri = round.link("self")?.href ?? round.uri;
+    const value = resourceUri;
 
-    if (!value) {
-        return null;
+    if (value) {
+        const label =
+            round.number !== undefined ? `Round ${round.number}` : getUriLabel(resourceUri, "Round");
+        return { label, value };
     }
 
-    const label = round.number !== undefined ? `Round ${round.number}` : getUriLabel(round.uri, "Round");
-    return { label, value };
+    return null;
 }
 
 function getCompetitionTableOption(table: CompetitionTable): Option | null {
-    const value = table.link("self")?.href ?? table.uri;
+    const resourceUri = table.link("self")?.href ?? table.uri;
+    const value = resourceUri;
 
-    if (!value) {
-        return null;
+    if (value) {
+        return {
+            label: getUriLabel(resourceUri, "Table"),
+            value,
+        };
     }
 
-    return {
-        label: getUriLabel(table.uri, "Table"),
-        value,
-    };
+    return null;
 }
 
 function getRefereeOption(referee: Referee): Option | null {
-    const value = referee.link("self")?.href ?? referee.uri;
+    const resourceUri = referee.link("self")?.href ?? referee.uri;
+    const value = resourceUri;
 
-    if (!value) {
-        return null;
+    if (value) {
+        return {
+            label: referee.name ?? referee.emailAddress ?? getUriLabel(resourceUri, "Referee"),
+            value,
+        };
     }
 
-    return {
-        label: referee.name ?? referee.emailAddress ?? getUriLabel(referee.uri, "Referee"),
-        value,
-    };
+    return null;
 }
 
 function getTeamOption(team: Team): Option | null {
-    const value = team.link("self")?.href ?? team.uri;
+    const resourceUri = team.link("self")?.href ?? team.uri;
+    const value = resourceUri;
 
-    if (!value) {
-        return null;
+    if (value) {
+        return {
+            label: team.name ?? team.id ?? getUriLabel(resourceUri, "Team"),
+            value,
+        };
     }
 
-    return {
-        label: team.name ?? team.id ?? getUriLabel(team.uri, "Team"),
-        value,
-    };
+    return null;
 }
 
 function compactOptions(options: Array<Option | null>) {

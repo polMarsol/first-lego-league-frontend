@@ -10,6 +10,17 @@ function normalizeTime(value: string) {
     return value.length === 5 ? `${value}:00` : value;
 }
 
+function parseTimeToSeconds(value: string) {
+    const match = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.exec(value);
+
+    if (!match) {
+        throw new ValidationError("Please provide valid match times.");
+    }
+
+    const [, hours, minutes, seconds] = match;
+    return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+}
+
 function validateMatchPayload(data: CreateMatchPayload) {
     if (
         !data.startTime ||
@@ -30,7 +41,7 @@ function validateMatchPayload(data: CreateMatchPayload) {
     const normalizedStartTime = normalizeTime(data.startTime);
     const normalizedEndTime = normalizeTime(data.endTime);
 
-    if (normalizedStartTime >= normalizedEndTime) {
+    if (parseTimeToSeconds(normalizedStartTime) >= parseTimeToSeconds(normalizedEndTime)) {
         throw new ValidationError("End time must be later than start time.");
     }
 
