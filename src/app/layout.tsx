@@ -15,6 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <script dangerouslySetInnerHTML={{
+        __html: `
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark') document.documentElement.classList.add('dark');
+    `}} />
       <body>
         <AuthProvider>
           <Navbar />
