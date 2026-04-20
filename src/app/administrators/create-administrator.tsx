@@ -31,7 +31,7 @@ export default function CreateAdministrator() {
             return;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[\w\-.]+@([\w-]+\.)+[\w-]{2,}$/;
         if (!emailRegex.test(email)) {
             setError("Please enter a valid email address.");
             return;
