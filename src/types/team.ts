@@ -34,29 +34,7 @@ export interface TeamMemberEntity {
 }
 
 export type TeamMember = TeamMemberEntity & Resource;
-
-export interface CreateTeamPayload {
-    name: string;
-    city: string;
-    foundationYear: number;
-    educationalCenter?: string;
-    category: string;
-    inscriptionDate: string;
-}
-
-export interface CreateTeamMemberPayload {
-    name: string;
-    birthDate: string;
-    gender?: string;
-    role: string;
-    team: string;
-}
-
-export interface CreateCoachPayload {
-    name: string;
-    emailAddress: string;
-    phoneNumber: string;
-}
+export type TeamMemberSnapshot = TeamMemberEntity;
 
 export const TEAM_CATEGORY_OPTIONS = ["CHALLENGE", "EXPLORE"] as const;
 
@@ -72,13 +50,36 @@ export const TEAM_MEMBER_GENDER_OPTIONS = [
 
 export type TeamMemberGender = (typeof TEAM_MEMBER_GENDER_OPTIONS)[number];
 
-export const DEFAULT_TEAM_MEMBER_ROLE = "Member";
+export interface CreateTeamPayload {
+    name: string;
+    city: string;
+    foundationYear: number;
+    educationalCenter: string;
+    category: TeamCategory;
+    inscriptionDate: string;
+}
+
+export interface CreateTeamMemberPayload {
+    name: string;
+    birthDate: string;
+    gender: TeamMemberGender;
+    role: string;
+    team: string;
+}
+
+export interface CreateCoachPayload {
+    name: string;
+    emailAddress: string;
+    phoneNumber: string;
+}
 
 export enum MemberRole {
     MEMBER = "Member",
     CAPTAIN = "Captain",
     MENTOR = "Mentor",
 }
+
+export const DEFAULT_TEAM_MEMBER_ROLE = MemberRole.MEMBER;
 
 export const AVAILABLE_MEMBER_ROLES = Object.values(MemberRole);
 

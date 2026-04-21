@@ -5,11 +5,23 @@ import ErrorAlert from "@/app/components/error-alert";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
-import { Team, TeamCoach, TeamMember } from "@/types/team";
+import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
 
 interface TeamDetailPageProps {
     readonly params: Promise<{ id: string }>;
+}
+
+function toTeamMemberSnapshot(member: TeamMember): TeamMemberSnapshot {
+    return {
+        id: member.id,
+        name: member.name,
+        birthDate: member.birthDate,
+        gender: member.gender,
+        tShirtSize: member.tShirtSize,
+        role: member.role,
+        uri: member.uri ?? member.link("self")?.href,
+    };
 }
 
 export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps>) {
@@ -57,14 +69,14 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         (authority) => authority.authority === "ROLE_ADMIN"
     );
 
-    const isCoach = !!currentUser && coaches.some(
-        (coach) =>
-            coach.emailAddress === currentUser.email || coach.name === currentUser.username
+    const isCoach = !!currentUser?.email && coaches.some(
+        (coach) => coach.emailAddress === currentUser.email
     );
 
     const coachName = coaches.length > 0
         ? (coaches[0].name ?? coaches[0].emailAddress ?? "Unnamed coach")
         : "No coach assigned";
+    const initialMembers = members.map(toTeamMemberSnapshot);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -81,9 +93,9 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
                     {!membersError && (
                         <TeamMembersManager
-                            key={`${id}-${members.length}`}
+                            key={`${id}-${initialMembers.length}`}
                             teamId={id}
-                            initialMembers={members}
+                            initialMembers={initialMembers}
                             isCoach={isCoach}
                             isAdmin={isAdmin}
                         />

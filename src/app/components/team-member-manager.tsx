@@ -2,14 +2,14 @@
 
 import { Button } from '@/app/components/button';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
-import { TeamMember } from '@/types/team';
+import { TeamMemberSnapshot } from '@/types/team';
 import { useState } from 'react';
 import { AddMemberForm } from './add-member-form';
 import { DeleteMemberDialog } from './delete-member-dialog';
 
 interface TeamMembersManagerProps {
     teamId: string;
-    initialMembers: TeamMember[];
+    initialMembers: TeamMemberSnapshot[];
     isCoach: boolean;
     isAdmin: boolean;
 }
@@ -38,36 +38,42 @@ export function TeamMembersManager({ teamId, initialMembers, isCoach, isAdmin }:
             )}
 
             <ul className="space-y-2">
-                {members.map((m) => (
-                    <li
-                        key={m.uri ?? String(m.id)}
-                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
-                    >
-                        <div>
-                            <span className="block font-medium">{m.name ?? "Unnamed member"}</span>
-                            <span className="text-xs text-muted-foreground uppercase">
-                                {m.role ?? "Member"}
-                            </span>
-                        </div>
-                        {isAuthorized && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() =>
-                                    m.uri
-                                        ? setSelected({
-                                            name: m.name ?? "Unnamed member",
-                                            uri: m.uri,
-                                        })
-                                        : null
-                                }
-                                disabled={!m.uri}
-                            >
-                                Delete
-                            </Button>
-                        )}
-                    </li>
-                ))}
+                {members.map((m, index) => {
+                    const memberUri = m.uri;
+                    const memberKey =
+                        memberUri ?? (m.id !== undefined ? String(m.id) : `member-${index}`);
+
+                    return (
+                        <li
+                            key={memberKey}
+                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
+                        >
+                            <div>
+                                <span className="block font-medium">{m.name ?? "Unnamed member"}</span>
+                                <span className="text-xs text-muted-foreground uppercase">
+                                    {m.role ?? "Member"}
+                                </span>
+                            </div>
+                            {isAuthorized && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() =>
+                                        memberUri
+                                            ? setSelected({
+                                                name: m.name ?? "Unnamed member",
+                                                uri: memberUri,
+                                            })
+                                            : null
+                                    }
+                                    disabled={!memberUri}
+                                >
+                                    Delete
+                                </Button>
+                            )}
+                        </li>
+                    );
+                })}
             </ul>
 
             {selected && (

@@ -3,6 +3,7 @@
 import { Button } from "@/app/components/button";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
+import { isValidEmailAddress } from "@/lib/validation";
 import { parseErrorMessage } from "@/types/errors";
 import {
     MAX_TEAM_MEMBERS,
@@ -388,10 +389,9 @@ export default function NewTeamForm() {
                                         type="email"
                                         {...register(`coaches.${index}.emailAddress`, {
                                             required: "Coach email address is required",
-                                            pattern: {
-                                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                                message: "Please enter a valid email address",
-                                            },
+                                            validate: (value) =>
+                                                isValidEmailAddress(value) ||
+                                                "Please enter a valid email address",
                                         })}
                                     />
                                     <FieldError

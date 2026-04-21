@@ -60,7 +60,7 @@ export class TeamsService {
                 name: data.name.trim(),
                 city: data.city.trim(),
                 foundationYear: data.foundationYear,
-                educationalCenter: data.educationalCenter?.trim() || undefined,
+                educationalCenter: data.educationalCenter.trim(),
                 category: data.category,
                 inscriptionDate: data.inscriptionDate,
             },
@@ -122,6 +122,27 @@ export class TeamsService {
         );
     }
 
+    async getCoachByEmail(emailAddress: string): Promise<TeamCoach | null> {
+        const normalizedEmail = emailAddress.trim();
+
+        if (!normalizedEmail) {
+            return null;
+        }
+
+        try {
+            return await fetchHalResource<TeamCoach>(
+                `/coaches/search/findByEmailAddress?email=${encodeURIComponent(normalizedEmail)}`,
+                this.authStrategy
+            );
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                return null;
+            }
+
+            throw error;
+        }
+    }
+
     async assignCoach(teamId: string, coachId: number): Promise<void> {
         const authorization = await this.authStrategy.getAuth();
 
@@ -163,7 +184,7 @@ export class TeamsService {
                 errorMessage = body.message || body.error || body.detail;
             }
         } catch {
-            // Ignore body parsing errors and fall back to generic messages.
+            errorMessage = undefined;
         }
 
         switch (response.status) {

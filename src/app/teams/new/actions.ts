@@ -4,9 +4,11 @@ import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
+import { isValidEmailAddress } from "@/lib/validation";
 import {
     ApiError,
     AuthenticationError,
+    ConflictError,
     ValidationError,
 } from "@/types/errors";
 import {
@@ -14,7 +16,10 @@ import {
     MAX_TEAM_MEMBERS,
     TEAM_CATEGORY_OPTIONS,
     Team,
+    TeamCategory,
     TeamCoach,
+    TEAM_MEMBER_GENDER_OPTIONS,
+    TeamMemberGender,
 } from "@/types/team";
 import { revalidatePath } from "next/cache";
 
@@ -44,7 +49,7 @@ export type CreateTeamFormPayload = {
 type NormalizedTeamMemberInput = {
     name: string;
     age: number;
-    gender: string;
+    gender: TeamMemberGender;
 };
 
 type NormalizedCoachInput = {
@@ -59,15 +64,19 @@ type ValidatedTeamPayload = {
     location: string;
     inscriptionDate: string;
     foundationYear: number;
-    category: string;
+    category: TeamCategory;
     members: NormalizedTeamMemberInput[];
     coaches: NormalizedCoachInput[];
 };
 
 const validTeamCategories = new Set<string>(TEAM_CATEGORY_OPTIONS);
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const validTeamMemberGenders = new Set<string>(TEAM_MEMBER_GENDER_OPTIONS);
 
-function normalizeRequiredString(value: string, message: string) {
+function normalizeRequiredString(value: unknown, message: string) {
+    if (typeof value !== "string") {
+        throw new ValidationError(message);
+    }
+
     const normalized = value.trim();
 
     if (!normalized) {
@@ -77,12 +86,11 @@ function normalizeRequiredString(value: string, message: string) {
     return normalized;
 }
 
-function normalizeOptionalString(value?: string) {
-    const normalized = value?.trim() ?? "";
-    return normalized || undefined;
-}
+function parseInteger(value: unknown, message: string) {
+    if (typeof value !== "string") {
+        throw new ValidationError(message);
+    }
 
-function parseInteger(value: string, message: string) {
     if (!/^\d+$/.test(value.trim())) {
         throw new ValidationError(message);
     }
@@ -130,11 +138,60 @@ function resolveTeamId(team: Team) {
 }
 
 function resolveCoachId(coach: TeamCoach) {
-    if (coach.id === undefined || coach.id === null) {
-        throw new ApiError("The coach was created, but its identifier could not be resolved.", 500, true);
+    const resolved =
+        coach.id ??
+        coach.link("self")?.href?.split("/").findLast(Boolean) ??
+        coach.uri?.split("/").findLast(Boolean);
+
+    if (resolved === undefined || resolved === null) {
+        throw new ApiError("The coach identifier could not be resolved.", 500, true);
     }
 
-    return coach.id;
+    const parsedId =
+        typeof resolved === "number" ? resolved : Number.parseInt(String(resolved), 10);
+
+    if (!Number.isInteger(parsedId)) {
+        throw new ApiError("The coach identifier could not be resolved.", 500, true);
+    }
+
+    return parsedId;
+}
+
+async function resolveCoachForAssignment(
+    service: TeamsService,
+    coach: NormalizedCoachInput,
+    coachLabel: string
+) {
+    const existingCoach = await service.getCoachByEmail(coach.emailAddress);
+    if (existingCoach) {
+        return {
+            coachId: resolveCoachId(existingCoach),
+            wasCreated: false,
+        };
+    }
+
+    try {
+        const createdCoach = await service.createCoach(coach);
+
+        return {
+            coachId: resolveCoachId(createdCoach),
+            wasCreated: true,
+        };
+    } catch (error) {
+        if (!(error instanceof ConflictError)) {
+            throw error;
+        }
+
+        const conflictedCoach = await service.getCoachByEmail(coach.emailAddress);
+        if (conflictedCoach) {
+            return {
+                coachId: resolveCoachId(conflictedCoach),
+                wasCreated: false,
+            };
+        }
+
+        throw new ValidationError(`${coachLabel} email address is already registered.`);
+    }
 }
 
 function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload {
@@ -148,12 +205,14 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
         data.inscriptionDate,
         "Inscription date is required."
     );
-    const normalizedCategory = normalizeRequiredString(data.category, "Category is required.")
+    const normalizedCategoryValue = normalizeRequiredString(data.category, "Category is required.")
         .toUpperCase();
 
-    if (!validTeamCategories.has(normalizedCategory)) {
+    if (!validTeamCategories.has(normalizedCategoryValue)) {
         throw new ValidationError("Please select a valid team category.");
     }
+
+    const normalizedCategory = normalizedCategoryValue as TeamCategory;
 
     const parsedInscriptionDate = ensureIsoDate(
         inscriptionDate,
@@ -197,13 +256,19 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
             throw new ValidationError(`Member ${index + 1} age must be between 1 and 99.`);
         }
 
+        const normalizedGender = normalizeRequiredString(
+            member.gender,
+            `Member ${index + 1} gender is required.`
+        );
+
+        if (!validTeamMemberGenders.has(normalizedGender)) {
+            throw new ValidationError(`Member ${index + 1} gender is invalid.`);
+        }
+
         return {
             name: nameValue,
             age,
-            gender: normalizeRequiredString(
-                member.gender,
-                `Member ${index + 1} gender is required.`
-            ),
+            gender: normalizedGender as TeamMemberGender,
         };
     });
 
@@ -222,7 +287,7 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
             `Coach ${index + 1} email address is required.`
         );
 
-        if (!emailPattern.test(emailAddress)) {
+        if (!isValidEmailAddress(emailAddress)) {
             throw new ValidationError(`Coach ${index + 1} email address is invalid.`);
         }
 
@@ -235,6 +300,17 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
             ),
         };
     });
+
+    const seenCoachEmails = new Set<string>();
+    for (const [index, coach] of coaches.entries()) {
+        const normalizedEmail = coach.emailAddress.toLowerCase();
+
+        if (seenCoachEmails.has(normalizedEmail)) {
+            throw new ValidationError(`Coach ${index + 1} email address duplicates another coach.`);
+        }
+
+        seenCoachEmails.add(normalizedEmail);
+    }
 
     return {
         name,
@@ -281,12 +357,13 @@ export async function createTeam(data: CreateTeamFormPayload) {
         name: validatedData.name,
         city: validatedData.location,
         foundationYear: validatedData.foundationYear,
-        educationalCenter: normalizeOptionalString(validatedData.educationalCenter),
+        educationalCenter: validatedData.educationalCenter,
         category: validatedData.category,
         inscriptionDate: validatedData.inscriptionDate,
     });
 
     const createdCoachIds: number[] = [];
+    const assignedCoachIds = new Set<number>();
     const teamId = resolveTeamId(createdTeam);
     const teamReference = `/teams/${encodeURIComponent(teamId)}`;
 
@@ -301,11 +378,22 @@ export async function createTeam(data: CreateTeamFormPayload) {
             });
         }
 
-        for (const coach of validatedData.coaches) {
-            const createdCoach = await teamsService.createCoach(coach);
-            const coachId = resolveCoachId(createdCoach);
+        for (const [index, coach] of validatedData.coaches.entries()) {
+            const { coachId, wasCreated } = await resolveCoachForAssignment(
+                teamsService,
+                coach,
+                `Coach ${index + 1}`
+            );
 
-            createdCoachIds.push(coachId);
+            if (assignedCoachIds.has(coachId)) {
+                throw new ValidationError(`Coach ${index + 1} email address duplicates another coach.`);
+            }
+
+            if (wasCreated) {
+                createdCoachIds.push(coachId);
+            }
+
+            assignedCoachIds.add(coachId);
             await teamsService.assignCoach(teamId, coachId);
         }
     } catch (error) {
