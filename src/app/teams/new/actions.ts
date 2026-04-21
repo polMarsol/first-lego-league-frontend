@@ -124,24 +124,41 @@ function deriveBirthDate(age: number, inscriptionDate: string) {
     return `${referenceYear - age}-01-01`;
 }
 
+function extractLastPathSegment(value: string | undefined) {
+    if (!value) {
+        return undefined;
+    }
+
+    const sanitizedValue = value.split(/[?#]/, 1)[0];
+    return sanitizedValue.split("/").findLast(Boolean);
+}
+
+function decodeUriComponentSafely(value: string) {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+}
+
 function resolveTeamId(team: Team) {
     const resolved =
         team.id ??
-        team.link("self")?.href?.split("/").findLast(Boolean) ??
-        team.uri?.split("/").findLast(Boolean);
+        extractLastPathSegment(team.link("self")?.href) ??
+        extractLastPathSegment(team.uri);
 
     if (!resolved) {
         throw new ApiError("The team was created, but its identifier could not be resolved.", 500, true);
     }
 
-    return decodeURIComponent(resolved);
+    return decodeUriComponentSafely(resolved);
 }
 
 function resolveCoachId(coach: TeamCoach) {
     const resolved =
         coach.id ??
-        coach.link("self")?.href?.split("/").findLast(Boolean) ??
-        coach.uri?.split("/").findLast(Boolean);
+        extractLastPathSegment(coach.link("self")?.href) ??
+        extractLastPathSegment(coach.uri);
 
     if (resolved === undefined || resolved === null) {
         throw new ApiError("The coach identifier could not be resolved.", 500, true);

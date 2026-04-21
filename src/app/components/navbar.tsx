@@ -7,22 +7,24 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+function toggleTheme() {
+    const html = document.documentElement;
+
+    if (html.classList.contains("dark")) {
+        html.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+        return;
+    }
+
+    html.classList.add("dark");
+    localStorage.setItem("theme", "dark");
+}
+
 export default function Navbar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const currentYear = searchParams.get("year");
     const { user } = useAuth();
-
-    function toggleTheme() {
-        const html = document.documentElement
-        if (html.classList.contains('dark')) {
-            html.classList.remove('dark')
-            localStorage.setItem('theme', 'light')
-        } else {
-            html.classList.add('dark')
-            localStorage.setItem('theme', 'dark')
-        }
-    }
 
     const navLinks = [
         { href: "/", label: "Home" },

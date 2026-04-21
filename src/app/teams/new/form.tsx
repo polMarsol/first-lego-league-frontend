@@ -78,6 +78,7 @@ function SectionCard({
 
 export default function NewTeamForm() {
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isRedirecting, setIsRedirecting] = useState(false);
     const router = useRouter();
     const {
         control,
@@ -122,8 +123,10 @@ export default function NewTeamForm() {
 
         try {
             const destination = await createTeam(data);
+            setIsRedirecting(true);
             router.push(destination);
         } catch (error) {
+            setIsRedirecting(false);
             setSubmitError(parseErrorMessage(error));
         }
     };
@@ -432,8 +435,8 @@ export default function NewTeamForm() {
                 </div>
             </SectionCard>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create team"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || isRedirecting}>
+                {isSubmitting || isRedirecting ? "Creating..." : "Create team"}
             </Button>
         </form>
     );

@@ -69,14 +69,18 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         (authority) => authority.authority === "ROLE_ADMIN"
     );
 
-    const isCoach = !!currentUser?.email && coaches.some(
-        (coach) => coach.emailAddress === currentUser.email
+    const currentUserEmail = currentUser?.email?.trim().toLowerCase();
+    const isCoach = !!currentUserEmail && coaches.some(
+        (coach) => coach.emailAddress?.trim().toLowerCase() === currentUserEmail
     );
 
     const coachName = coaches.length > 0
         ? (coaches[0].name ?? coaches[0].emailAddress ?? "Unnamed coach")
         : "No coach assigned";
     const initialMembers = members.map(toTeamMemberSnapshot);
+    const membersKey = initialMembers
+        .map((member) => member.uri ?? String(member.id ?? member.name ?? ""))
+        .join("|");
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -93,7 +97,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
                     {!membersError && (
                         <TeamMembersManager
-                            key={`${id}-${initialMembers.length}`}
+                            key={`${id}-${membersKey}`}
                             teamId={id}
                             initialMembers={initialMembers}
                             isCoach={isCoach}

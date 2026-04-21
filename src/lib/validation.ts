@@ -19,7 +19,14 @@ export function isValidEmailAddress(value: string): boolean {
     const domain = value.slice(atIndex + 1);
     const firstDotIndex = domain.indexOf(".");
 
-    if (!local || !domain || domain.startsWith(".") || domain.endsWith(".")) {
+    if (
+        !local ||
+        !domain ||
+        local.startsWith(".") ||
+        local.endsWith(".") ||
+        domain.startsWith(".") ||
+        domain.endsWith(".")
+    ) {
         return false;
     }
 
@@ -27,5 +34,5 @@ export function isValidEmailAddress(value: string): boolean {
         return false;
     }
 
-    return !domain.includes("..");
+    return !local.includes("..") && !domain.includes("..");
 }

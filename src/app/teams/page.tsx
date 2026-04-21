@@ -8,7 +8,7 @@ import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
-import { ApiError, parseErrorMessage } from "@/types/errors";
+import { ApiError, AuthenticationError, parseErrorMessage } from "@/types/errors";
 import { Team } from "@/types/team";
 import { User } from "@/types/user";
 import Link from "next/link";
@@ -75,8 +75,13 @@ export default async function TeamsPage({ searchParams }: Readonly<{ searchParam
 
     try {
         currentUser = await new UsersService(serverAuthProvider).getCurrentUser();
-    } catch {
+    } catch (error) {
         currentUser = null;
+        if (error instanceof AuthenticationError || (error instanceof ApiError && error.statusCode === 403)) {
+            console.warn("Current user is not authorized to access admin actions on the teams page.");
+        } else {
+            console.error("Failed to fetch current user on the teams page:", error);
+        }
     }
 
     try {

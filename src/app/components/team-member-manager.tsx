@@ -14,6 +14,18 @@ interface TeamMembersManagerProps {
     isAdmin: boolean;
 }
 
+function getMemberKey(member: TeamMemberSnapshot, index: number) {
+    if (member.uri !== undefined) {
+        return member.uri;
+    }
+
+    if (member.id === undefined) {
+        return `member-${index}`;
+    }
+
+    return String(member.id);
+}
+
 export function TeamMembersManager({ teamId, initialMembers, isCoach, isAdmin }: Readonly<TeamMembersManagerProps>) {
     const isAuthorized = isCoach || isAdmin;
     const { members, addMember, removeMember, isFull } = useTeamMembers(teamId, initialMembers);
@@ -28,8 +40,8 @@ export function TeamMembersManager({ teamId, initialMembers, isCoach, isAdmin }:
 
             {showForm && (
                 <AddMemberForm
-                    onSubmit={async (name, role) => {
-                        const success = await addMember(name, role);
+                    onSubmit={async (name, role, birthDate, gender) => {
+                        const success = await addMember(name, role, birthDate, gender);
                         if (success) setShowForm(false);
                         return success;
                     }}
@@ -40,11 +52,7 @@ export function TeamMembersManager({ teamId, initialMembers, isCoach, isAdmin }:
             <ul className="space-y-2">
                 {members.map((m, index) => {
                     const memberUri = m.uri;
-                    let memberKey = memberUri;
-
-                    if (memberKey === undefined) {
-                        memberKey = m.id !== undefined ? String(m.id) : `member-${index}`;
-                    }
+                    const memberKey = getMemberKey(m, index);
 
                     return (
                         <li

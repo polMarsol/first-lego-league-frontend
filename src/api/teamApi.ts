@@ -15,6 +15,7 @@ import {
     Team,
     TeamCoach,
     TeamMember,
+    TeamMemberGender,
 } from "@/types/team";
 import {
     API_BASE_URL,
@@ -35,6 +36,8 @@ function getSafeEncodedId(id: string): string {
 export interface AddMemberPayload {
     name: string;
     role: string;
+    birthDate: string;
+    gender: TeamMemberGender;
 }
 
 export class TeamsService {
@@ -103,8 +106,8 @@ export class TeamsService {
         return this.createTeamMember({
             name: data.name,
             role: data.role,
-            birthDate: "2010-01-01",
-            gender: "MALE",
+            birthDate: data.birthDate,
+            gender: data.gender,
             team: `/teams/${safeId}`,
         });
     }
