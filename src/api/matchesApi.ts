@@ -1,10 +1,12 @@
 import type { AuthStrategy } from "@/lib/authProvider";
 import { CompetitionTable } from "@/types/competitionTable";
 import { Match } from "@/types/match";
+import { MatchResult, MatchResultEntity, RegisterMatchScoreRequest, RegisterMatchScoreResponse } from "@/types/matchResult";
 import { Referee } from "@/types/referee";
 import { Round } from "@/types/round";
 import { Team } from "@/types/team";
-import { createHalResource, fetchHalCollection, fetchHalResource } from "./halClient";
+import { ApiError } from "@/types/errors";
+import { createHalResource, fetchHalCollection, fetchHalResource, postHal } from "./halClient";
 
 export type CreateMatchPayload = {
     startTime: string;
@@ -45,6 +47,16 @@ export class MatchesService {
         return fetchHalCollection<Team>(`/matches/${matchId}/teams`, this.authStrategy, "teams");
     }
 
+    async getMatchTeamA(id: string): Promise<Team> {
+        const matchId = encodeURIComponent(id);
+        return fetchHalResource<Team>(`/matches/${matchId}/teamA`, this.authStrategy);
+    }
+
+    async getMatchTeamB(id: string): Promise<Team> {
+        const matchId = encodeURIComponent(id);
+        return fetchHalResource<Team>(`/matches/${matchId}/teamB`, this.authStrategy);
+    }
+
     async getRounds(): Promise<Round[]> {
         return fetchHalCollection<Round>(
             "/rounds?sort=number,asc&size=1000",
@@ -71,5 +83,25 @@ export class MatchesService {
 
     async createMatch(data: CreateMatchPayload): Promise<Match> {
         return createHalResource<Match>("/matches", data, this.authStrategy, "match");
+    }
+
+    async getMatchResults(matchUri: string): Promise<MatchResult[]> {
+        const encodedUri = encodeURIComponent(matchUri);
+        return fetchHalCollection<MatchResultEntity>(
+            `/matchResults/search/findByMatch?match=${encodedUri}`,
+            this.authStrategy,
+            "matchResults"
+        );
+    }
+
+    async registerMatchResult(data: RegisterMatchScoreRequest): Promise<RegisterMatchScoreResponse> {
+        const resource = await postHal("/matchResults/register", data, this.authStrategy);
+        if (!resource) throw new ApiError("No response from server", 500, true);
+        const raw = resource as unknown as RegisterMatchScoreResponse;
+        return {
+            matchId: raw.matchId,
+            resultSaved: raw.resultSaved,
+            rankingUpdated: raw.rankingUpdated,
+        };
     }
 }
