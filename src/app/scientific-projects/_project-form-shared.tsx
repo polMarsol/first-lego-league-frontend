@@ -48,7 +48,7 @@ interface OptionSelectProps {
     placeholder?: string;
 }
 
-export function OptionSelect({ id, label, options, registration, error, disabled, placeholder }: OptionSelectProps) {
+export function OptionSelect({ id, label, options, registration, error, disabled, placeholder }: Readonly<OptionSelectProps>) {
     return (
         <div className="grid gap-2">
             <Label htmlFor={id}>{label}</Label>
@@ -71,7 +71,7 @@ export function ScientificProjectForm({
     successRedirect,
     submitLabel,
     savingLabel,
-}: ScientificProjectFormProps) {
+}: Readonly<ScientificProjectFormProps>) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ProjectFormValues>({ defaultValues });
     const router = useRouter();

@@ -15,7 +15,7 @@ export default function EditScientificProjectForm({
     defaultValues,
     editionOptions,
     teamsPerEdition,
-}: EditScientificProjectFormProps) {
+}: Readonly<EditScientificProjectFormProps>) {
     return (
         <ScientificProjectForm
             defaultValues={defaultValues}

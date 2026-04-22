@@ -11,10 +11,10 @@ export interface EditionFormData {
 export async function fetchEditionFormData(authProvider: AuthStrategy): Promise<EditionFormData> {
     const editions = await new EditionsService(authProvider).getEditions().catch(() => []);
 
-    const editionOptions: Option[] = editions.map(e => ({
-        label: `${e.year}${e.venueName ? ` — ${e.venueName}` : ''}`,
-        value: e.link('self')?.href ?? '',
-    }));
+    const editionOptions: Option[] = editions.map(e => {
+        const venuePart = e.venueName ? ` — ${e.venueName}` : '';
+        return { label: `${e.year}${venuePart}`, value: e.link('self')?.href ?? '' };
+    });
 
     const teamsPerEditionEntries = await Promise.all(
         editions.map(async (e) => {
