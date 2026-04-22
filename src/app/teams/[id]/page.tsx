@@ -153,14 +153,20 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                             {awardsError && <ErrorAlert message={awardsError} />}
                             {!awardsError && (
                                 <ul className="space-y-2">
-                                    {awards.map((award) => (
-                                        <li
-                                            key={award.uri ?? award.name}
-                                            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground"
-                                        >
-                                            {award.name ?? "Unnamed award"}
-                                        </li>
-                                    ))}
+                                    {awards.map((award, index) => {
+                                        const awardKey = award.link("self")?.href
+                                            ?? award.uri
+                                            ?? `${award.name ?? "award"}-${index}`;
+
+                                        return (
+                                            <li
+                                                key={awardKey}
+                                                className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground"
+                                            >
+                                                {award.name ?? "Unnamed award"}
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             )}
                         </>
