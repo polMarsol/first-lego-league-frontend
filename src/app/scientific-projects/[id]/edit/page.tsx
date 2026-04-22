@@ -1,11 +1,10 @@
 import { ScientificProjectsService } from '@/api/scientificProjectApi';
-import { EditionsService } from '@/api/editionApi';
 import { UsersService } from '@/api/userApi';
 import ErrorAlert from '@/app/components/error-alert';
 import PageShell from '@/app/components/page-shell';
 import { serverAuthProvider } from '@/lib/authProvider';
 import { isAdmin } from '@/lib/authz';
-import { getEncodedResourceId } from '@/lib/halRoute';
+import { fetchEditionFormData } from '@/app/scientific-projects/_fetch-edition-data';
 import { AuthenticationError, NotFoundError, parseErrorMessage } from '@/types/errors';
 import { redirect } from 'next/navigation';
 import EditScientificProjectForm from './form';
@@ -43,28 +42,7 @@ export default async function EditScientificProjectPage(props: Readonly<EditScie
         }
     }
 
-    const editions = await new EditionsService(serverAuthProvider).getEditions().catch(() => []);
-
-    const editionOptions = editions.map(e => ({
-        label: `${e.year}${e.venueName ? ` — ${e.venueName}` : ''}`,
-        value: e.link('self')?.href ?? '',
-    }));
-
-    const teamsPerEditionEntries = await Promise.all(
-        editions.map(async (e) => {
-            const editionHref = e.link('self')?.href ?? '';
-            const editionId = getEncodedResourceId(editionHref) ?? '';
-            const teams = await new EditionsService(serverAuthProvider)
-                .getEditionTeams(editionId)
-                .catch(() => []);
-            return [editionHref, teams.map(t => ({
-                label: t.id ?? t.name ?? '',
-                value: t.link('self')?.href ?? '',
-            }))] as const;
-        })
-    );
-
-    const teamsPerEdition = Object.fromEntries(teamsPerEditionEntries);
+    const { editionOptions, teamsPerEdition } = await fetchEditionFormData(serverAuthProvider);
 
     const teamHref = project?.link('team')?.href ?? project?.team ?? '';
     const editionHref = project?.link('edition')?.href ?? project?.edition ?? '';

@@ -4,12 +4,11 @@ import { Button } from "@/app/components/button";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
 import { Textarea } from "@/app/components/textarea";
+import { Option, OptionSelect } from "@/app/scientific-projects/_project-form-shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { createScientificProject } from "./actions";
-
-type Option = { label: string; value: string };
 
 type FormValues = {
     name: string;
@@ -18,10 +17,6 @@ type FormValues = {
     team: string;
 };
 
-const selectClassName =
-    "border-input h-11 w-full border bg-card px-4 py-2 text-base outline-none " +
-    "focus-visible:border-ring focus-visible:ring-ring/35 focus-visible:ring-[3px] " +
-    "aria-invalid:border-destructive md:text-sm disabled:pointer-events-none disabled:opacity-50";
 
 export default function NewScientificProjectForm({
     editionOptions,
@@ -91,42 +86,24 @@ export default function NewScientificProjectForm({
                 )}
             </div>
 
-            <div className="grid gap-2">
-                <Label htmlFor="edition">Edition</Label>
-                <select
-                    id="edition"
-                    className={selectClassName}
-                    {...register("edition", { required: "Edition is required" })}
-                >
-                    <option value="">Select an edition...</option>
-                    {editionOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
-                {errors.edition && (
-                    <p className="text-sm text-destructive">{errors.edition.message}</p>
-                )}
-            </div>
+            <OptionSelect
+                id="edition"
+                label="Edition"
+                options={editionOptions}
+                registration={register("edition", { required: "Edition is required" })}
+                error={errors.edition?.message}
+                placeholder="Select an edition..."
+            />
 
-            <div className="grid gap-2">
-                <Label htmlFor="team">Team</Label>
-                <select
-                    id="team"
-                    className={selectClassName}
-                    disabled={!watchedEdition}
-                    {...register("team", { required: "Team is required" })}
-                >
-                    <option value="">
-                        {watchedEdition ? "Select a team..." : "Select an edition first..."}
-                    </option>
-                    {visibleTeams.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
-                {errors.team && (
-                    <p className="text-sm text-destructive">{errors.team.message}</p>
-                )}
-            </div>
+            <OptionSelect
+                id="team"
+                label="Team"
+                options={visibleTeams}
+                registration={register("team", { required: "Team is required" })}
+                error={errors.team?.message}
+                disabled={!watchedEdition}
+                placeholder={watchedEdition ? "Select a team..." : "Select an edition first..."}
+            />
 
             <Button
                 type="submit"

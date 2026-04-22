@@ -1,0 +1,34 @@
+import { EditionsService } from '@/api/editionApi';
+import { getEncodedResourceId } from '@/lib/halRoute';
+import type { AuthStrategy } from '@/lib/authProvider';
+import type { Option } from './_project-form-shared';
+
+export interface EditionFormData {
+    editionOptions: Option[];
+    teamsPerEdition: Record<string, Option[]>;
+}
+
+export async function fetchEditionFormData(authProvider: AuthStrategy): Promise<EditionFormData> {
+    const editions = await new EditionsService(authProvider).getEditions().catch(() => []);
+
+    const editionOptions: Option[] = editions.map(e => ({
+        label: `${e.year}${e.venueName ? ` — ${e.venueName}` : ''}`,
+        value: e.link('self')?.href ?? '',
+    }));
+
+    const teamsPerEditionEntries = await Promise.all(
+        editions.map(async (e) => {
+            const editionHref = e.link('self')?.href ?? '';
+            const editionId = getEncodedResourceId(editionHref) ?? '';
+            const teams = await new EditionsService(authProvider)
+                .getEditionTeams(editionId)
+                .catch(() => []);
+            return [editionHref, teams.map(t => ({
+                label: t.id ?? t.name ?? '',
+                value: t.link('self')?.href ?? '',
+            }))] as const;
+        })
+    );
+
+    return { editionOptions, teamsPerEdition: Object.fromEntries(teamsPerEditionEntries) };
+}

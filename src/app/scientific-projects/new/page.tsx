@@ -1,7 +1,6 @@
-import { EditionsService } from "@/api/editionApi";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
-import { getEncodedResourceId } from "@/lib/halRoute";
+import { fetchEditionFormData } from "@/app/scientific-projects/_fetch-edition-data";
 import { redirect } from "next/navigation";
 import NewScientificProjectForm from "./form";
 
@@ -9,28 +8,7 @@ export default async function NewScientificProjectPage() {
     const auth = await serverAuthProvider.getAuth();
     if (!auth) redirect("/login");
 
-    const editions = await new EditionsService(serverAuthProvider).getEditions().catch(() => []);
-
-    const editionOptions = editions.map(e => ({
-        label: `${e.year}${e.venueName ? ` — ${e.venueName}` : ""}`,
-        value: e.link("self")?.href ?? "",
-    }));
-
-    const teamsPerEditionEntries = await Promise.all(
-        editions.map(async (e) => {
-            const editionHref = e.link("self")?.href ?? "";
-            const editionId = getEncodedResourceId(editionHref) ?? "";
-            const teams = await new EditionsService(serverAuthProvider)
-                .getEditionTeams(editionId)
-                .catch(() => []);
-            return [editionHref, teams.map(t => ({
-                label: t.id ?? "",
-                value: t.link("self")?.href ?? "",
-            }))] as const;
-        })
-    );
-
-    const teamsPerEdition = Object.fromEntries(teamsPerEditionEntries);
+    const { editionOptions, teamsPerEdition } = await fetchEditionFormData(serverAuthProvider);
 
     return (
         <PageShell
