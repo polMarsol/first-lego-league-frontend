@@ -231,7 +231,7 @@ export class TeamsService {
     async removeTeamMember(memberUri: string): Promise<void> {
         await deleteHal(memberUri, this.authStrategy);
     }
-    async updateTeam(id: string, data: UpdateTeamPayload): Promise<Team> {
+    async updateTeam(id: string, data: UpdateTeamFormPayload): Promise<Team>
         const teamId = getSafeEncodedId(id);
         const authorization = await this.authStrategy.getAuth();
 
