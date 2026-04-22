@@ -1,76 +1,59 @@
 import { AwardsService } from "@/api/awardApi";
+import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
+import { ScientificProjectCardLink } from "@/app/components/scientific-project-card";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
-import { Team } from "@/types/team";
+import { ScientificProject } from "@/types/scientificProject";
+import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
 
 interface TeamDetailPageProps {
     readonly params: Promise<{ id: string }>;
 }
 
-interface RawMember {
-    id?: string | number;
-    name?: string;
-    username?: string;
-    role?: string;
-    uri?: string;
-    _links?: {
-        self: { href: string };
+function toTeamMemberSnapshot(member: TeamMember): TeamMemberSnapshot {
+    return {
+        id: member.id,
+        name: member.name,
+        birthDate: member.birthDate,
+        gender: member.gender,
+        tShirtSize: member.tShirtSize,
+        role: member.role,
+        uri: member.uri ?? member.link("self")?.href,
     };
 }
 
-interface HalMemberResponse {
-    _embedded?: {
-        teamMembers: RawMember[];
-    };
-}
-
-function extractTeamMembers(data: unknown): User[] {
-    const isHalResponse = (obj: unknown): obj is HalMemberResponse => {
-        return !!obj && typeof obj === 'object' && '_embedded' in obj;
-    };
-
-    let rawMembers: RawMember[] = [];
-    if (Array.isArray(data)) {
-        rawMembers = data as RawMember[];
-    } else if (isHalResponse(data)) {
-        rawMembers = data._embedded?.teamMembers ?? [];
-    } else {
-        rawMembers = [];
+function getTeamDisplayName(team: Team | null): string | null {
+    if (!team) {
+        return null;
     }
 
-    return rawMembers.map((m, index) => {
-        const extractedId = m._links?.self?.href?.split('/').pop() || m.uri?.split('/').pop();
-
-        return {
-            id: String(m.id ?? extractedId ?? `member-${index}`),
-            name: String(m.name ?? m.username ?? "Unnamed member"),
-            role: String(m.role ?? "Member"),
-            uri: String(m._links?.self?.href || m.uri || "")
-        } as unknown as User;
-    });
+    return team.name ?? team.id ?? null;
 }
 
 export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps>) {
     const { id } = await props.params;
 
     const service = new TeamsService(serverAuthProvider);
+    const scientificProjectsService = new ScientificProjectsService(serverAuthProvider);
     const userService = new UsersService(serverAuthProvider);
 
     let currentUser: User | null = null;
     let team: Team | null = null;
-    let coaches: User[] = [];
-    let members: User[] = [];
     let awards: Award[] = [];
     let error: string | null = null;
-    let membersError: string | null = null;
     let awardsError: string | null = null;
+    let coaches: TeamCoach[] = [];
+    let members: TeamMember[] = [];
+    let scientificProjects: ScientificProject[] = [];
+    let membersError: string | null = null;
+    let scientificProjectsError: string | null = null;
 
     try {
         currentUser = await userService.getCurrentUser().catch(() => null);
@@ -82,18 +65,30 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         error = parseErrorMessage(e);
     }
 
-    if (team && !error) {
-        try {
-            const [coachesData, membersData] = await Promise.all([
-                service.getTeamCoach(id),
-                service.getTeamMembers(id)
-            ]);
+    const teamDisplayName = getTeamDisplayName(team);
 
+    if (team && !error) {
+        const [membersResult, scientificProjectsResult] = await Promise.allSettled([
+            Promise.all([service.getTeamCoach(id), service.getTeamMembers(id)]),
+            teamDisplayName
+                ? scientificProjectsService.getScientificProjectsByTeamName(teamDisplayName)
+                : Promise.resolve([] as ScientificProject[])
+        ]);
+
+        if (membersResult.status === "fulfilled") {
+            const [coachesData, membersData] = membersResult.value;
             coaches = coachesData ?? [];
-            members = extractTeamMembers(membersData);
-        } catch (e) {
-            console.error("Error loading members:", e);
-            membersError = parseErrorMessage(e);
+            members = membersData ?? [];
+        } else {
+            console.error("Error loading members:", membersResult.reason);
+            membersError = parseErrorMessage(membersResult.reason);
+        }
+
+        if (scientificProjectsResult.status === "fulfilled") {
+            scientificProjects = scientificProjectsResult.value;
+        } else {
+            console.error("Error loading scientific projects:", scientificProjectsResult.reason);
+            scientificProjectsError = parseErrorMessage(scientificProjectsResult.reason);
         }
 
         try {
@@ -115,32 +110,37 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         (authority) => authority.authority === "ROLE_ADMIN"
     );
 
-    const isCoach = !!currentUser && coaches.some(
-        (c) => c.username === currentUser?.username || c.email === currentUser?.email
+    const currentUserEmail = currentUser?.email?.trim().toLowerCase();
+    const isCoach = !!currentUserEmail && coaches.some(
+        (coach) => coach.emailAddress?.trim().toLowerCase() === currentUserEmail
     );
 
     const coachName = coaches.length > 0
-        ? (coaches[0].username ?? coaches[0].email ?? "Unnamed coach")
+        ? (coaches[0].name ?? coaches[0].emailAddress ?? "Unnamed coach")
         : "No coach assigned";
+    const initialMembers = members.map(toTeamMemberSnapshot);
+    const membersKey = initialMembers
+        .map((member) => member.uri ?? String(member.id ?? member.name ?? ""))
+        .join("|");
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-3xl px-4 py-10">
-                <div className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <h1 className="mb-2 text-2xl font-semibold text-foreground">{team.name}</h1>
+                <div className="w-full rounded-lg border bg-white p-6 shadow-sm dark:bg-black">
+                    <h1 className="mb-2 text-2xl font-semibold">{teamDisplayName ?? "Unnamed team"}</h1>
 
                     <div className="mb-6 space-y-1 text-sm text-muted-foreground">
                         {team.city && <p><strong>City:</strong> {team.city}</p>}
                         <p><strong>Coach:</strong> {coachName}</p>
                     </div>
 
-                    <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">Team Members</h2>
+                    <h2 className="mt-8 mb-4 text-xl font-semibold">Team Members</h2>
 
                     {!membersError && (
                         <TeamMembersManager
-                            key={`${id}-${members.length}`}
+                            key={`${id}-${membersKey}`}
                             teamId={id}
-                            initialMembers={members}
+                            initialMembers={initialMembers}
                             isCoach={isCoach}
                             isAdmin={isAdmin}
                         />
@@ -171,6 +171,33 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                             )}
                         </>
                     )}
+                    <section aria-labelledby="team-projects-heading">
+                        <h2 id="team-projects-heading" className="mt-8 mb-4 text-xl font-semibold">
+                            Scientific Projects
+                        </h2>
+
+                        {scientificProjectsError && (
+                            <ErrorAlert message={`Could not load scientific projects. ${scientificProjectsError}`} />
+                        )}
+
+                        {!scientificProjectsError && scientificProjects.length === 0 && (
+                            <EmptyState
+                                title="No scientific projects yet"
+                                description="This team has not submitted any scientific projects."
+                                className="py-8"
+                            />
+                        )}
+
+                        {!scientificProjectsError && scientificProjects.length > 0 && (
+                            <ul className="space-y-3">
+                                {scientificProjects.map((project, index) => (
+                                    <li key={project.uri ?? project.link("self")?.href ?? index}>
+                                        <ScientificProjectCardLink project={project} index={index} variant="stacked" />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
                 </div>
             </div>
         </div>
