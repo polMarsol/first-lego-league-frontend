@@ -2,13 +2,33 @@ import type { AuthStrategy } from "@/lib/authProvider";
 import { Edition } from "@/types/edition";
 import type { HalPage } from "@/types/pagination";
 import { Team } from "@/types/team";
-import { createHalResource, fetchHalCollection, fetchHalPagedCollection, fetchHalResource } from "./halClient";
+
+import { createHalResource, fetchHalCollection, fetchHalPagedCollection, fetchHalResource, updateHalResource } from "./halClient";
 
 export type CreateEditionPayload = {
     year: number;
     venueName: string;
     description: string;
 };
+
+export type UpdateEditionPayload = {
+    year?: number;
+    venueName?: string;
+    description?: string;
+};
+
+function normalizeResourcePath(resourceUri: string) {
+    if (resourceUri.startsWith("/")) {
+        return resourceUri;
+    }
+
+    try {
+        const parsed = new URL(resourceUri);
+        return `${parsed.pathname}${parsed.search}`;
+    } catch {
+        return resourceUri;
+    }
+}
 
 export class EditionsService {
     constructor(private readonly authStrategy: AuthStrategy) {}
@@ -24,6 +44,10 @@ export class EditionsService {
     async getEditionById(id: string): Promise<Edition> {
         const editionId = encodeURIComponent(id);
         return fetchHalResource<Edition>(`/editions/${editionId}`, this.authStrategy);
+    }
+
+    async getEditionByUri(resourceUri: string): Promise<Edition> {
+        return fetchHalResource<Edition>(normalizeResourcePath(resourceUri), this.authStrategy);
     }
 
     async getEditionByYear(year: string | number): Promise<Edition | null> {
@@ -43,5 +67,10 @@ export class EditionsService {
 
     async createEdition(data: CreateEditionPayload): Promise<Edition> {
         return createHalResource<Edition>("/editions", data, this.authStrategy, "edition");
+    }
+
+    async updateEdition(id: string, data: UpdateEditionPayload): Promise<Edition> {
+        const editionId = encodeURIComponent(id);
+        return updateHalResource<Edition>(`/editions/${editionId}`, data, this.authStrategy, "edition");
     }
 }
