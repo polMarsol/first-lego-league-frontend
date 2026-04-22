@@ -1,9 +1,11 @@
+import { AwardsService } from "@/api/awardApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Team } from "@/types/team";
 import { User } from "@/types/user";
@@ -65,8 +67,10 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     let team: Team | null = null;
     let coaches: User[] = [];
     let members: User[] = [];
+    let awards: Award[] = [];
     let error: string | null = null;
     let membersError: string | null = null;
+    let awardsError: string | null = null;
 
     try {
         currentUser = await userService.getCurrentUser().catch(() => null);
@@ -90,6 +94,17 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
         } catch (e) {
             console.error("Error loading members:", e);
             membersError = parseErrorMessage(e);
+        }
+
+        try {
+            const teamUri = team.link("self")?.href;
+            if (teamUri) {
+                const awardsService = new AwardsService(serverAuthProvider);
+                awards = await awardsService.getAwardsByWinner(teamUri);
+            }
+        } catch (e) {
+            console.error("Error loading awards:", e);
+            awardsError = parseErrorMessage(e);
         }
     }
 
@@ -131,6 +146,25 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                         />
                     )}
                     {membersError && <ErrorAlert message={membersError} />}
+
+                    {(awards.length > 0 || awardsError) && (
+                        <>
+                            <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">Awards</h2>
+                            {awardsError && <ErrorAlert message={awardsError} />}
+                            {!awardsError && (
+                                <ul className="space-y-2">
+                                    {awards.map((award) => (
+                                        <li
+                                            key={award.uri ?? award.name}
+                                            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground"
+                                        >
+                                            {award.name ?? "Unnamed award"}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
         </div>
