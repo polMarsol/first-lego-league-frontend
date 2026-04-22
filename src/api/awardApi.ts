@@ -16,6 +16,8 @@ export class AwardsService {
             this.authStrategy,
             "awards"
         );
+    }
+
     async getAwardsOfEdition(editionUri: string): Promise<Award[]> {
         const encodedEditionUri = encodeURIComponent(editionUri);
         const awards = await fetchHalCollection<Award>(
