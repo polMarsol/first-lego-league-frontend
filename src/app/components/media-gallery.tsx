@@ -16,7 +16,7 @@ export interface MediaItem {
 
 function getYouTubeId(url?: string): string | null {
     if (!url) return null;
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/.exec(url);
     return match?.[1] ?? null;
 }
 
@@ -77,19 +77,76 @@ function MediaCard({ item, index, className, onClick }: {
     readonly className: string;
     readonly onClick: () => void;
 }) {
-    return (
-        <button
-            onClick={onClick}
-            aria-label={`Open media ${index + 1}`}
-            className={`group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${className}`}
-        >
+    const href = getMediaHref(item);
+    const cardClassName = `group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${className}`;
+    const content = (
+        <>
             <MediaThumb item={item} index={index} />
             <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/15" />
+        </>
+    );
+
+    if (href) {
+        return (
+            <Link href={href} aria-label={`Open media ${index + 1}`} className={cardClassName}>
+                {content}
+            </Link>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={`Open media ${index + 1}`}
+            className={cardClassName}
+        >
+            {content}
         </button>
     );
 }
 
 // ─── Lightbox content ──────────────────────────────────────────────────────────
+
+function LightboxMedia({ item, index }: { readonly item: MediaItem; readonly index: number }) {
+    const ytId = getYouTubeId(item.url);
+    if (ytId) {
+        return (
+            <>
+                <div className="relative w-full max-w-lg overflow-hidden rounded-xl shadow-lg">
+                    <YtThumb videoId={ytId} overlay="large" />
+                </div>
+                <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+                >
+                    View on YouTube <ExternalLink className="h-4 w-4" />
+                </a>
+            </>
+        );
+    }
+    if (isImage(item.type) && item.url) {
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img src={item.url} alt={`Media ${index + 1}`} className="max-h-[60vh] max-w-full rounded-xl object-contain shadow-lg" />;
+    }
+    if (isVideo(item.type)) {
+        return (
+            <div className="flex h-56 w-full max-w-sm items-center justify-center rounded-xl bg-zinc-900">
+                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                    <Film className="h-14 w-14" />
+                    <span className="text-sm">Video — preview not available</span>
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div className="flex h-48 w-full max-w-sm items-center justify-center rounded-xl bg-zinc-800">
+            <FileIcon className="h-14 w-14 text-zinc-400" />
+        </div>
+    );
+}
 
 function LightboxContent({ item, index }: { readonly item: MediaItem; readonly index: number }) {
     const href = getMediaHref(item);
@@ -97,42 +154,13 @@ function LightboxContent({ item, index }: { readonly item: MediaItem; readonly i
 
     return (
         <div className="flex flex-col items-center gap-5">
-            {ytId ? (
-                <>
-                    <div className="relative w-full max-w-lg overflow-hidden rounded-xl shadow-lg">
-                        <YtThumb videoId={ytId} overlay="large" />
-                    </div>
-                    <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
-                    >
-                        Ver en YouTube <ExternalLink className="h-4 w-4" />
-                    </a>
-                </>
-            ) : isImage(item.type) && item.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.url} alt={`Media ${index + 1}`} className="max-h-[60vh] max-w-full rounded-xl object-contain shadow-lg" />
-            ) : isVideo(item.type) ? (
-                <div className="flex h-56 w-full max-w-sm items-center justify-center rounded-xl bg-zinc-900">
-                    <div className="flex flex-col items-center gap-3 text-zinc-400">
-                        <Film className="h-14 w-14" />
-                        <span className="text-sm">Video — preview not available</span>
-                    </div>
-                </div>
-            ) : (
-                <div className="flex h-48 w-full max-w-sm items-center justify-center rounded-xl bg-zinc-800">
-                    <FileIcon className="h-14 w-14 text-zinc-400" />
-                </div>
-            )}
-
+            <LightboxMedia item={item} index={index} />
             {!ytId && href && (
                 <Link
                     href={href}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
                 >
-                    Ver detalles <ExternalLink className="h-4 w-4" />
+                    View details <ExternalLink className="h-4 w-4" />
                 </Link>
             )}
         </div>
@@ -148,7 +176,8 @@ function HeroSection({ item, index, onOpen }: { readonly item: MediaItem; readon
 }
 
 function GridSection({ items, startIndex, onOpen }: { readonly items: MediaItem[]; readonly startIndex: number; readonly onOpen: (i: number) => void }) {
-    const cols = items.length <= 2 ? "grid-cols-2" : items.length === 3 ? "grid-cols-3" : "grid-cols-2";
+    let cols = "grid-cols-2";
+    if (items.length === 3) cols = "grid-cols-3";
     return (
         <div className={`grid ${cols} gap-3`}>
             {items.map((item, i) => {
@@ -273,7 +302,7 @@ export function MediaGallery({ mediaContents }: MediaGalleryProps) {
 
                         <div className="mb-4 flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">{activeIndex + 1} / {mediaContents.length}</span>
-                            <Dialog.Close className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+                            <Dialog.Close aria-label="Close media viewer" className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
                                 <X className="h-5 w-5" />
                             </Dialog.Close>
                         </div>
@@ -296,8 +325,8 @@ export function MediaGallery({ mediaContents }: MediaGalleryProps) {
 
                         {mediaContents.length > 1 && (
                             <div className="mt-5 flex justify-center gap-1.5">
-                                {mediaContents.map((_, i) => (
-                                    <button key={i} onClick={() => setActiveIndex(i)} aria-label={`Go to ${i + 1}`}
+                                {mediaContents.map((item, i) => (
+                                    <button key={item.uri ?? item.id ?? item.url ?? String(i)} onClick={() => setActiveIndex(i)} aria-label={`Go to ${i + 1}`}
                                         className={`h-1.5 rounded-full transition-all ${i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border hover:bg-muted-foreground"}`} />
                                 ))}
                             </div>

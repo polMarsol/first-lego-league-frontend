@@ -5,7 +5,6 @@ import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
 import { MediaItem } from "@/app/components/media-gallery";
 import { MediaSection } from "@/app/components/media-section";
-import { DEMO_MEDIA } from "@/lib/demo-media";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { Award } from "@/types/award";
@@ -77,6 +76,37 @@ function normalizeUri(resourceUri: string | null | undefined): string | null {
     return sanitizedUri.replace(/^https?:\/\/[^/]+/i, "");
 }
 
+interface EditionUriData {
+    awards: Award[];
+    mediaContents: MediaContent[];
+    awardsError: string | null;
+    mediaError: string | null;
+}
+
+async function fetchByEditionUri(
+    editionUri: string,
+    awardsService: AwardsService,
+    mediaService: MediaService,
+): Promise<EditionUriData> {
+    const result: EditionUriData = { awards: [], mediaContents: [], awardsError: null, mediaError: null };
+
+    try {
+        result.awards = await awardsService.getAwardsOfEdition(editionUri);
+    } catch (e) {
+        console.error("Failed to fetch awards:", e);
+        result.awardsError = parseErrorMessage(e);
+    }
+
+    try {
+        result.mediaContents = await mediaService.getMediaByEdition(editionUri);
+    } catch (e) {
+        console.error("Failed to fetch media:", e);
+        result.mediaError = parseErrorMessage(e);
+    }
+
+    return result;
+}
+
 function getAwardsByTeamUri(awards: Award[]): Map<string, Award[]> {
     const awardsByTeamUri = new Map<string, Award[]>();
 
@@ -134,19 +164,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
         }
 
         if (edition.uri) {
-            try {
-                awards = await awardsService.getAwardsOfEdition(edition.uri);
-            } catch (e) {
-                console.error("Failed to fetch awards:", e);
-                awardsError = parseErrorMessage(e);
-            }
-
-            try {
-                mediaContents = await mediaService.getMediaByEdition(edition.uri);
-            } catch (e) {
-                console.error("Failed to fetch media:", e);
-                mediaError = parseErrorMessage(e);
-            }
+            ({ awards, mediaContents, awardsError, mediaError } = await fetchByEditionUri(edition.uri, awardsService, mediaService));
         }
     }
 
@@ -246,8 +264,17 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
 
                             {mediaError && <ErrorAlert message={mediaError} />}
 
-                            {!mediaError && (
-                                <MediaSection mediaContents={(mediaContents as MediaItem[]).length > 0 ? mediaContents as MediaItem[] : DEMO_MEDIA} />
+                            {!mediaError && mediaContents.length > 0 && (
+                                <MediaSection mediaContents={mediaContents as MediaItem[]} />
+                            )}
+
+                            {!mediaError && mediaContents.length === 0 && (
+                                <div className="mt-6">
+                                    <EmptyState
+                                        title="No media found"
+                                        description="No media has been added to this edition yet."
+                                    />
+                                </div>
                             )}
                         </>
                     )}
