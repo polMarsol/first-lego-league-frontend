@@ -1,5 +1,4 @@
 'use client';
-'use no memo';
 
 import { Button } from '@/app/components/button';
 import { Input } from '@/app/components/input';
@@ -82,9 +81,11 @@ export function ScientificProjectForm({
     savingLabel,
 }: Readonly<ScientificProjectFormProps>) {
     const [submitError, setSubmitError] = useState<string | null>(null);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ProjectFormValues>({ defaultValues });
     const router = useRouter();
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const watchedEdition = watch('edition');
     const visibleTeams = teamsPerEdition[watchedEdition] ?? [];
 

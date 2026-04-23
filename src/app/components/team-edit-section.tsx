@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/button';
 import { Input } from '@/app/components/input';
@@ -35,17 +35,6 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
     const [foundationYear, setFoundationYear] = useState(team.foundationYear ?? '');
     const [inscriptionDate, setInscriptionDate] = useState(team.inscriptionDate ?? '');
 
-    useEffect(() => {
-        // Inicializar estados cuando cambia el equipo
-        if (isEditing) {
-            setCity(team.city ?? '');
-            setEducationalCenter(team.educationalCenter ?? '');
-            setCategory(team.category ?? '');
-            setFoundationYear(team.foundationYear ?? '');
-            setInscriptionDate(team.inscriptionDate ?? '');
-        }
-    }, [team.id, isEditing]);
-
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (isLoading) return;
@@ -79,6 +68,16 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
         } finally {
             setIsLoading(false);
         }
+    }
+
+    function handleEditClick() {
+        setError(null);
+        setCity(team.city ?? '');
+        setEducationalCenter(team.educationalCenter ?? '');
+        setCategory(team.category ?? '');
+        setFoundationYear(team.foundationYear ?? '');
+        setInscriptionDate(team.inscriptionDate ?? '');
+        setIsEditing(true);
     }
 
     return (
@@ -179,10 +178,7 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                            setError(null);
-                            setIsEditing(true);
-                        }}
+                        onClick={handleEditClick}
                     >
                         Edit team
                     </Button>
