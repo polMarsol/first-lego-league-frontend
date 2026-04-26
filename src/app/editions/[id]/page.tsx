@@ -1,8 +1,11 @@
 import { AwardsService } from "@/api/awardApi";
 import { EditionsService } from "@/api/editionApi";
+import { LeaderboardService } from "@/api/leaderboardApi";
 import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
+import LeaderboardTable from "@/app/components/leaderboard-table";
 import { serverAuthProvider } from "@/lib/authProvider";
+import type { LeaderboardItem } from "@/types/leaderboard";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { Award } from "@/types/award";
 import { Edition } from "@/types/edition";
@@ -98,9 +101,11 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     let edition: Edition | null = null;
     let teams: Team[] = [];
     let awards: Award[] = [];
+    let leaderboardItems: LeaderboardItem[] = [];
     let error: string | null = null;
     let teamsError: string | null = null;
     let awardsError: string | null = null;
+    let classificationError: string | null = null;
 
     try {
         edition = await editionsService.getEditionById(id);
@@ -132,6 +137,14 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                 console.error("Failed to fetch awards:", e);
                 awardsError = parseErrorMessage(e);
             }
+        }
+
+        try {
+            const data = await new LeaderboardService(serverAuthProvider).getEditionLeaderboard(id, 0, 100);
+            leaderboardItems = data.items;
+        } catch (e) {
+            console.error("Failed to fetch leaderboard:", e);
+            classificationError = parseErrorMessage(e);
         }
     }
 
@@ -227,6 +240,21 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                         description="Awards for this edition have not been published yet."
                                     />
                                 </div>
+                            )}
+
+                            <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">Final Classification</h2>
+
+                            {classificationError && <ErrorAlert message={classificationError} />}
+
+                            {!classificationError && leaderboardItems.length === 0 && (
+                                <EmptyState
+                                    title="No results yet"
+                                    description="Classification will appear once match results are recorded."
+                                />
+                            )}
+
+                            {!classificationError && leaderboardItems.length > 0 && (
+                                <LeaderboardTable items={leaderboardItems} />
                             )}
                         </>
                     )}

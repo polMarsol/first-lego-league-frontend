@@ -49,16 +49,27 @@ export class ScientificProjectsService {
         return mergeHal<ScientificProject>(resource);
     }
 
-    async updateScientificProject(
+    private async patchScientificProject(
         id: string,
-        data: {
-            score: number;
-            comments: string;
-        }
+        data: Record<string, unknown>
     ): Promise<ScientificProject | null> {
         const projectId = encodeURIComponent(id);
         const resource = await patchHal(`/scientificProjects/${projectId}`, data, this.authStrategy);
         return resource ? mergeHal<ScientificProject>(resource) : null;
+    }
+
+    async editScientificProjectInfo(
+        id: string,
+        data: { comments: string; team: string; edition: string }
+    ): Promise<ScientificProject | null> {
+        return this.patchScientificProject(id, data);
+    }
+
+    async updateScientificProject(
+        id: string,
+        data: { score: number; comments: string }
+    ): Promise<ScientificProject | null> {
+        return this.patchScientificProject(id, data);
     }
 
     async deleteScientificProject(id: string): Promise<void> {
