@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 export interface AwardItem {
     key: string;
     name: string;
@@ -19,23 +17,17 @@ interface Particle {
 
 const CONFETTI_COLORS = ['#FFD700', '#FFC300', '#FF8C00', '#FFE066', '#FFA500', '#FFDF00', '#F4C430'];
 
+const PARTICLES: Particle[] = Array.from({ length: 28 }, (_, i) => ({
+    id: i,
+    left: (i * 13 + 7) % 100,
+    delay: ((i * 37) % 30) / 10,
+    duration: 2 + ((i * 23) % 25) / 10,
+    width: 6 + (i * 7) % 8,
+    height: 4 + (i * 11) % 5,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+}));
+
 export default function AwardSection({ awards }: Readonly<{ awards: AwardItem[] }>) {
-    const [particles, setParticles] = useState<Particle[]>([]);
-
-    useEffect(() => {
-        setParticles(
-            Array.from({ length: 28 }, (_, i) => ({
-                id: i,
-                left: Math.random() * 100,
-                delay: Math.random() * 3,
-                duration: 2 + Math.random() * 2.5,
-                width: 6 + Math.random() * 8,
-                height: 4 + Math.random() * 5,
-                color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-            }))
-        );
-    }, []);
-
     return (
         <>
             <style>{`
@@ -62,11 +54,9 @@ export default function AwardSection({ awards }: Readonly<{ awards: AwardItem[] 
                     animation: 'gold-shimmer 4s ease infinite',
                 }}
             >
-                {/* inner card — particles live here so they appear above the background */}
                 <div className="relative overflow-hidden rounded-md bg-amber-50/95 px-6 py-5 dark:bg-amber-950/90">
 
-                    {/* confetti particles — z-0, rise from bottom of the card */}
-                    {particles.map(p => (
+                    {PARTICLES.map(p => (
                         <div
                             key={p.id}
                             className="pointer-events-none absolute rounded-sm"
@@ -82,7 +72,6 @@ export default function AwardSection({ awards }: Readonly<{ awards: AwardItem[] 
                         />
                     ))}
 
-                    {/* content above particles */}
                     <div className="relative z-10">
                         <div className="mb-4 flex items-center gap-2">
                             <span className="text-3xl" aria-hidden="true">🏆</span>
