@@ -18,6 +18,7 @@ import { parseErrorMessage, NotFoundError } from "@/types/errors";
 import Link from "next/link";
 import { buttonVariants } from "@/app/components/button";
 import { isAdmin } from "@/lib/authz";
+import AddMediaForm from "./_add-media-form";
 import { User } from "@/types/user";
 import { UsersService } from "@/api/userApi";
 
@@ -299,20 +300,28 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                 <LeaderboardTable items={leaderboardItems} />
                             )}
 
-                            {mediaError && <ErrorAlert message={mediaError} />}
+                            <section id="media-section">
+                                <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">Media Gallery</h2>
 
-                            {!mediaError && mediaContents.length > 0 && (
-                                <MediaSection mediaContents={mediaContents.map(toMediaItem)} />
-                            )}
+                                {currentUser && isAdmin(currentUser) && edition && (
+                                    <AddMediaForm
+                                        editionUri={`/editions/${id}`}
+                                    />
+                                )}
 
-                            {!mediaError && mediaContents.length === 0 && (
-                                <div className="mt-6">
+                                {mediaError && <ErrorAlert message={mediaError} />}
+
+                                {!mediaError && mediaContents.length > 0 && (
+                                    <MediaSection mediaContents={mediaContents.map(toMediaItem)} />
+                                )}
+
+                                {!mediaError && mediaContents.length === 0 && (
                                     <EmptyState
                                         title="No media found"
                                         description="No media has been added to this edition yet."
                                     />
-                                </div>
-                            )}
+                                )}
+                            </section>
                         </>
                     )}
                 </div>

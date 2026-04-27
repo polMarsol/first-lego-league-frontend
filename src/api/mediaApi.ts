@@ -1,6 +1,6 @@
 import type { AuthStrategy } from "@/lib/authProvider";
 import { MediaContent } from "@/types/mediaContent";
-import { fetchHalCollection } from "./halClient";
+import { createHalResource, fetchHalCollection } from "./halClient";
 
 export class MediaService {
     constructor(private readonly authStrategy: AuthStrategy) {}
@@ -11,6 +11,15 @@ export class MediaService {
             `/mediaContents/search/findByEdition?edition=${encodedEditionUri}`,
             this.authStrategy,
             "mediaContents"
+        );
+    }
+
+    async createMedia(payload: { id: string; type: string; edition: string }): Promise<MediaContent> {
+        return createHalResource<MediaContent>(
+            '/mediaContents',
+            { url: payload.id, type: payload.type, edition: payload.edition },
+            this.authStrategy,
+            'mediaContent'
         );
     }
 }
